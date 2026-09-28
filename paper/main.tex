@@ -1,0 +1,62 @@
+\documentclass[12pt]{article}
+
+% --- Encoding and fonts -------------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+% --- Page layout --------------------------------------------------------------
+\usepackage[margin=1in]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+
+% --- Mathematics --------------------------------------------------------------
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+
+% --- Tables and figures -------------------------------------------------------
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{threeparttable}
+\usepackage{caption}
+\usepackage{subcaption}
+\graphicspath{{figures/}}
+
+% --- Bibliography -------------------------------------------------------------
+\usepackage[authoryear,round]{natbib}
+
+% --- Hyperlinks (load last) ---------------------------------------------------
+\usepackage[colorlinks=true,allcolors=blue]{hyperref}
+
+% ------------------------------------------------------------------------------
+\title{When Do Machine-Learning Equity Signals Deserve Trust?\\
+Cross-Model Disagreement and Out-of-Sample Forecast Reliability}
+\author{Sefa Avci}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+TODO.
+\end{abstract}
+
+\input{sections/01_introduction}
+\input{sections/02_related_literature}
+\input{sections/03_data}
+\input{sections/04_methodology}
+\input{sections/05_results}
+\input{sections/06_robustness}
+\input{sections/07_economic_application}
+\input{sections/08_limitations}
+\input{sections/09_conclusion}
+
+% Lists all references until they are cited in the text.
+\nocite{*}
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}

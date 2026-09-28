@@ -1,0 +1,80 @@
+# ==========================================================================
+# Data: licensed WRDS/CRSP data must never be committed.
+# Everything under data/ is ignored except data/README.md.
+# ==========================================================================
+/data/*
+!/data/README.md
+
+# Generated results may contain stock- or date-level information derived from
+# licensed CRSP/WRDS data. Ignored by default; add files explicitly if needed.
+/experiments/results/*
+!/experiments/results/.gitkeep
+
+# Credentials (e.g., WRDS connection files)
+.env
+.env.*
+.pgpass
+
+# ==========================================================================
+# Python
+# ==========================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+wheels/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Testing, coverage, type checking, linting
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+.mypy_cache/
+.ruff_cache/
+
+# ==========================================================================
+# Jupyter
+# ==========================================================================
+.ipynb_checkpoints/
+
+# ==========================================================================
+# LaTeX build artifacts (paper/ only)
+# ==========================================================================
+paper/**/*.aux
+paper/**/*.bbl
+paper/**/*.blg
+paper/**/*.fdb_latexmk
+paper/**/*.fls
+paper/**/*.log
+paper/**/*.out
+paper/**/*.synctex.gz
+paper/**/*.toc
+paper/**/*.lof
+paper/**/*.lot
+paper/main.pdf
+
+# ==========================================================================
+# Editors and OS
+# ==========================================================================
+.vscode/
+.idea/
+.claude/
+.DS_Store
+Thumbs.db
+desktop.ini
