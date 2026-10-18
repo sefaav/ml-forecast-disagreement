@@ -15,3 +15,11 @@ data:
     exchanges: [NYSE, AMEX, NASDAQ]
     breakpoint_exchange: NYSE
     breakpoint_quantile: 0.20             # keep stocks at or above the NYSE 20th percentile
+
+  sample:                                 # formation months, yyyymm, inclusive
+    start: 197001
+    end: 202412                           # usable OSAP coverage of the pinned release
+
+  predictors:                             # eligibility within a training episode
+    min_stock_coverage: 0.60              # observed for >= 60% of U_t in a month
+    min_month_share: 0.95                 # in >= 95% of the episode's historical months

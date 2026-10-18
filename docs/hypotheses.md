@@ -15,11 +15,14 @@ mechanism/decomposition analysis, and H4 is a secondary economic application.
 - **Universe U_t:** eligible NYSE/AMEX/NASDAQ common stocks, excluding stocks
   below the monthly 20th percentile of NYSE market capitalization measured at
   formation time t.
-  [TODO: exact sample start and end dates.]
+- **Sample:** formation months 1970-01 through 2024-12, inclusive.
 - **Training target (primary):** the cross-sectional rank of next-month return
   within U_t, mapped to [-1, 1].
-- **Features:** [TODO: exact feature-coverage threshold and resulting feature
-  count.]
+- **Features:** the 212 candidate predictors, filtered at each training
+  cutoff using historical months only. A predictor is eligible if it has a
+  finite observed value for at least 60% of U_t in at least 95% of the
+  historical months available at that cutoff. All four model families use
+  the same eligible predictors within a training episode.
 - **Family consensus rank:** the average of a family's replica prediction
   ranks, re-ranked cross-sectionally on [0, 1].
 - **Ensemble signal level $S$:** the equal-weighted average of the family
