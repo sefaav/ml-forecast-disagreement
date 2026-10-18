@@ -1,0 +1,37 @@
+# Exact environment used to test the data pipeline (Python 3.13.7, Windows).
+# Install with:
+#   python -m venv .venv
+#   .venv\Scripts\python -m pip install -r requirements-lock.txt
+#   .venv\Scripts\python -m pip install -e . --no-deps
+asttokens==3.0.2
+colorama==0.4.6
+decorator==5.3.1
+executing==2.3.0
+greenlet==3.5.6
+iniconfig==2.3.1
+ipython==9.8.0
+ipython_pygments_lexers==1.1.1
+jedi==0.20.0
+matplotlib-inline==0.2.2
+numpy==2.5.4
+packaging==26.3
+pandas==2.2.3
+parso==0.8.7
+pluggy==1.6.0
+prompt_toolkit==3.0.53
+psycopg2-binary==2.9.13
+pure_eval==0.2.4
+pyarrow==26.0.0
+Pygments==2.21.0
+pytest==9.1.1
+python-dateutil==2.9.0.post0
+pytz==2026.5
+PyYAML==6.0.3
+six==1.17.0
+SQLAlchemy==2.0.54
+stack-data==0.6.3
+traitlets==5.16.1
+typing_extensions==4.16.0
+tzdata==2026.5
+wcwidth==0.9.2
+wrds==3.5.0

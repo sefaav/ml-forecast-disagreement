@@ -1,1 +1,17 @@
-# TODO: Baseline specification, to be defined in a later step.
+# Baseline data specification.
+
+data:
+  sources:
+    crsp:
+      library: crsp
+      monthly_table: stkmthsecuritydata   # CRSP CIZ monthly security data
+    osap:
+      release: "2025-10"                  # October 2025 release, version 2.0.0
+      file: signed_predictors_dl_wide.zip
+      sha256: aae101c1fd4749c5a68d83734b6ce5e90a0f2f18b456f498e6f3b803081f6ee3
+      predictors: 209                     # signed predictors in the file
+
+  universe:
+    exchanges: [NYSE, AMEX, NASDAQ]
+    breakpoint_exchange: NYSE
+    breakpoint_quantile: 0.20             # keep stocks at or above the NYSE 20th percentile

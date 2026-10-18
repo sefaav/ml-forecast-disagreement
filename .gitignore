@@ -10,6 +10,20 @@
 /experiments/results/*
 !/experiments/results/.gitkeep
 
+# Accidental data exports anywhere else (synthetic test fixtures may be kept
+# under tests/fixtures/).
+*.parquet
+*.feather
+*.arrow
+*.pkl
+*.pickle
+*.h5
+*.hdf5
+*.dta
+*.sas7bdat
+*.zip
+!tests/fixtures/**
+
 # Credentials (e.g., WRDS connection files)
 .env
 .env.*

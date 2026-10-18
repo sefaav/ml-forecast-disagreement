@@ -1,8 +1,7 @@
 # Data Governance
 
-First version, written before any WRDS/CRSP data are accessed. These are the
-project's own conservative rules; they do not restate or interpret the WRDS
-licence terms.
+These are the project's own conservative rules; they do not restate or
+interpret the WRDS licence terms.
 
 ## Licensed data
 
@@ -33,11 +32,21 @@ licence terms.
 - Notebook outputs must be inspected before each commit and stripped if they
   contain any licensed row-level data.
 
+## AI tools and external services
+
+- Licensed row-level data must never be printed into an AI tool conversation,
+  pasted or uploaded to any external service, or shown in terminal output
+  that such a tool can read.
+- Pipeline commands print only schema names, counts, date ranges, quantiles
+  and validation status; problems are reproduced with synthetic data, not
+  with licensed rows.
+
 ## Tests
 
 - Tests will use clearly synthetic fixtures, never licensed data.
 
-## To be documented
+## Data sources and pipeline
 
-- Exact data sources, access procedures and the local data layout will be
-  documented once the data pipeline is implemented.
+- Sources, access procedures and the local data layout are documented in
+  [data/README.md](../data/README.md) and
+  [data_pipeline.md](data_pipeline.md).

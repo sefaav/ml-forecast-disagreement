@@ -11,5 +11,6 @@ lower out-of-sample forecast reliability
 beyond signal strength and observable risk, and whether that information has
 economic value.
 
-> **Status:** research-design stage. No data, models, or results are in the
-> repository yet.
+> **Status:** the formation-time data pipeline is implemented and validated
+> ([docs/data_pipeline.md](docs/data_pipeline.md)). The repository contains no
+> licensed data, models or empirical results.

@@ -8,7 +8,21 @@ version = "0.0.0"
 description = "Cross-model disagreement and out-of-sample reliability of machine-learning equity signals."
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.2",
+    "pyarrow>=15",
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+# WRDS access for the CRSP extraction (wrds 3.5 requires pandas < 2.3).
+wrds = ["wrds>=3.5"]
+dev = ["pytest>=8"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
