@@ -27,15 +27,19 @@ python -m venv .venv
 
 .venv\Scripts\python -m disagreement.data crsp-extract   # WRDS login; full fresh extract
 .venv\Scripts\python -m disagreement.data build          # universe, panel, validation
+.venv\Scripts\python -m disagreement.data target         # next-month return and ranked target
 .venv\Scripts\python -m pytest                           # synthetic tests
 ```
 
 `crsp-extract` reads the WRDS username from `--wrds-username` or
 `WRDS_USERNAME`, otherwise `wrds` prompts. It downloads the whole table into
 a temporary directory, which replaces the previous extract only after the
-extraction succeeds. `build` checks the extract against `_manifest.json` and
+extraction succeeds; the universe, panel, target and their diagnostics are
+then removed, so `build` must be run again. `build` checks the extract against `_manifest.json` and
 the OSAP archive against the pinned release before touching earlier outputs.
-Both commands print aggregate information only.
+`target` reads the universe of the last successful build and the CRSP
+extract; `build` removes it together with the universe and panel. All
+commands print aggregate information only.
 
 ## Local files
 
@@ -44,7 +48,8 @@ data/
   raw/crsp/      CRSP extract, one file per year, and _manifest.json
   raw/osap/      OSAP archive
   interim/       temporary files, removed by build
-  processed/     universe/ (U_t members) and panel/ (U_t x 212 predictors), one file per year
+  processed/     universe/ (U_t members), panel/ (U_t x 212 predictors) and target/
+                 (ret_next, target_rank), one file per year
   diagnostics/   summary.json, universe_by_month.csv
 ```
 

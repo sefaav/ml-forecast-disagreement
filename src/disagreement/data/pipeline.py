@@ -182,6 +182,15 @@ def build_panel_files(paths: DataPaths, cfg: DataConfig, osap_path: Path, signal
     }
 
 
+def remove_derived_outputs(paths: DataPaths) -> None:
+    """Universe, panel, target and their diagnostics, all derived from the CRSP extract."""
+    for stale in (paths.diagnostics / "summary.json", paths.diagnostics / "universe_by_month.csv"):
+        stale.unlink(missing_ok=True)
+    for directory in (paths.universe, paths.panel, paths.target):
+        if directory.exists():
+            shutil.rmtree(directory)
+
+
 def build(paths: DataPaths, cfg: DataConfig, osap_path: Path | None = None, block_size: int = osap.DEFAULT_BLOCK_SIZE) -> dict:
     """Universe, panel, universe_by_month.csv and summary.json.
 
@@ -196,11 +205,7 @@ def build(paths: DataPaths, cfg: DataConfig, osap_path: Path | None = None, bloc
 
     summary_path = paths.diagnostics / "summary.json"
     by_month_path = paths.diagnostics / "universe_by_month.csv"
-    for stale in (summary_path, by_month_path):
-        stale.unlink(missing_ok=True)
-    for directory in (paths.universe, paths.panel):
-        if directory.exists():
-            shutil.rmtree(directory)
+    remove_derived_outputs(paths)
 
     by_month = build_universe_files(paths, cfg, files, manifest)
     n_no_breakpoint = int((by_month["n_nyse_eligible"] == 0).sum())

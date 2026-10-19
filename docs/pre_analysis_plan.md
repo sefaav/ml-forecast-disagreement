@@ -8,6 +8,29 @@ sample restriction is applied when training and evaluation data are drawn
 from it. The end point reflects the usable OSAP coverage of the pinned
 October 2025 release; the baseline does not extend into 2025.
 
+## Prediction target
+
+The prediction horizon is one month. For each stock in $U_t$ (formation
+month $t$), the realized return `ret_next` is the same PERMNO's CRSP CIZ
+`MthRet` in calendar month $t+1$; the formation month 2024-12 uses 2025-01
+returns. `MthRet` already includes the delisting return when CRSP provides
+one, and no separate delisting return is compounded. Nothing else from $t+1$
+is used: a stock that delists, changes exchange or leaves the universe during
+$t+1$ keeps its formation observation and its $t+1$ return. Without a finite
+`MthRet` for the same PERMNO in exactly $t+1$, `ret_next` is missing.
+
+The primary training target `target_rank` ranks the finite `ret_next` values
+within each formation month's $U_t$, with average ranks for ties, and maps
+them to $[-1, 1]$:
+
+$$Y_{i,t+1} = 2\,\frac{\operatorname{rank}_{i,t} - 1}{n_t - 1} - 1,$$
+
+where $n_t$ is the number of stocks in $U_t$ with a finite `ret_next`
+($Y = 0$ when $n_t = 1$). Stocks with a missing `ret_next` have a missing
+target. Implementation: `disagreement.data.target`
+(`python -m disagreement.data target`, output under
+`data/processed/target/`).
+
 ## Predictor availability
 
 The candidate predictors are the 212 predictors of the formation-time panel:

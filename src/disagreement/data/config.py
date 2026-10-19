@@ -38,6 +38,10 @@ class DataPaths:
         return self.root / "processed" / "panel"
 
     @property
+    def target(self) -> Path:
+        return self.root / "processed" / "target"
+
+    @property
     def diagnostics(self) -> Path:
         return self.root / "diagnostics"
 

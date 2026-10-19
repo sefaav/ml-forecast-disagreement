@@ -8,6 +8,8 @@ import pandas as pd
 import pytest
 
 from disagreement.data import crsp
+from disagreement.data.cli import main
+from disagreement.data.config import DataPaths
 from disagreement.data.validation import DataValidationError
 from synthetic import crsp_row
 
@@ -36,6 +38,9 @@ class FakeConnection:
         frame["permno"] = frame["permno"].astype("Int64")  # wrds' nullable dtypes
         frame["mthcap"] = pd.array([10.0, None], dtype="Float64")
         return frame
+
+    def close(self):
+        pass
 
     def downloaded_years(self):
         return [int(y) for q in self.queries for y in re.findall(r"between '(\d{4})", q)]
@@ -96,3 +101,37 @@ def test_extract_stops_when_a_required_field_is_missing(tmp_path):
     assert not list(tmp_path.glob("*.parquet"))
     with pytest.raises(ValueError):
         crsp.extract_monthly(FakeConnection(), "crsp", "msf; drop table x", tmp_path)
+
+
+def _derived_outputs(paths):
+    """Placeholder outputs of an earlier build and target run."""
+    outputs = [
+        paths.universe / "universe_2000.parquet",
+        paths.panel / "panel_2000.parquet",
+        paths.target / "target_2000.parquet",
+        paths.diagnostics / "summary.json",
+        paths.diagnostics / "universe_by_month.csv",
+    ]
+    for path in outputs:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("from an earlier build")
+    return outputs
+
+
+def test_successful_extraction_invalidates_derived_outputs(tmp_path, monkeypatch, capsys):
+    paths = DataPaths(tmp_path / "data")
+    outputs = _derived_outputs(paths)
+    monkeypatch.setattr(crsp, "connect", lambda _username: FakeConnection())
+    assert main(["crsp-extract", "--data-dir", str(paths.root)]) == 0
+    assert not any(path.exists() for path in outputs)
+    assert not any(d.exists() for d in (paths.universe, paths.panel, paths.target))
+    assert "run build again" in capsys.readouterr().out
+
+
+def test_failed_extraction_keeps_derived_outputs(tmp_path, monkeypatch):
+    paths = DataPaths(tmp_path / "data")
+    outputs = _derived_outputs(paths)
+    monkeypatch.setattr(crsp, "connect", lambda _username: FakeConnection(fail_year=2001))
+    with pytest.raises(ConnectionError):
+        main(["crsp-extract", "--data-dir", str(paths.root)])
+    assert all(path.read_text() == "from an earlier build" for path in outputs)

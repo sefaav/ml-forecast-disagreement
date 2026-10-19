@@ -92,7 +92,7 @@ def delisted_in_month(df: pd.DataFrame) -> np.ndarray:
     return _is(df, "mthretflg", (DELISTING_RETFLG,)) | _is(df, "mthdelflg", DELISTING_DELFLG)
 
 
-def _keys(raw: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
+def month_keys(raw: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
     dates = pd.to_datetime(raw["mthcaldt"])
     n_missing = int(dates.isna().sum())
     if n_missing:
@@ -108,7 +108,7 @@ def normalize_monthly(raw: pd.DataFrame) -> pd.DataFrame:
     if missing:
         raise DataValidationError(f"CRSP data lack required fields: {', '.join(missing)}")
     raw = raw.reset_index(drop=True)
-    permno, yyyymm = _keys(raw)
+    permno, yyyymm = month_keys(raw)
     out = pd.DataFrame(
         {
             "permno": permno,
@@ -132,7 +132,7 @@ def crsp_predictors(raw: pd.DataFrame) -> pd.DataFrame:
     convention). Non-positive prices or caps give missing values.
     """
     raw = raw.reset_index(drop=True)
-    permno, yyyymm = _keys(raw)
+    permno, yyyymm = month_keys(raw)
     price = np.abs(raw["mthprc"].to_numpy(dtype="float64", na_value=np.nan))
     cap = raw["mthcap"].to_numpy(dtype="float64", na_value=np.nan)
     ret = raw["mthret"].to_numpy(dtype="float64", na_value=np.nan)
