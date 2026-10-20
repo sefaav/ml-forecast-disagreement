@@ -73,3 +73,29 @@ the acknowledged cost of favoring characteristics with longer data histories.
 
 These choices were made solely from data-availability diagnostics and were not
 selected using forecasting performance or subsequent-return results.
+
+## Predictor preprocessing
+
+Predictors are transformed month by month within $U_t$, each predictor
+separately. In formation month $t$, the finite values of predictor $j$ are
+average-ranked across stocks and mapped to $[-1, 1]$:
+
+$$X^{*}_{i,j,t} = 2\,\frac{\operatorname{rank}_{i,j,t} - 1}{n_{j,t} - 1} - 1,$$
+
+where $n_{j,t}$ is the number of finite values ($X^{*} = 0$ when
+$n_{j,t} = 1$; a constant predictor maps to 0). Missing and non-finite values
+take no part in the ranking and are set to 0 afterwards. No information from
+other months, no outcome and no model result enters the transformation, so
+the same rule applies to training, validation and out-of-sample months
+without any fitted parameter. All four model families receive the same
+transformed predictors. The predictors to transform are those eligible under
+the availability rule at the episode's training cutoff. Implementation:
+`disagreement.preprocessing.ranks.rank_predictors`.
+
+### Rationale for the preprocessing rule
+
+The characteristics have heterogeneous units and distributions. Cross-sectional
+ranks place them on a common scale and reduce sensitivity to scale and extreme
+magnitudes. Zero, the center of rank space, provides a common neutral value for
+missing observations. The rule was fixed before any model was estimated or any
+forecasting result was examined.
