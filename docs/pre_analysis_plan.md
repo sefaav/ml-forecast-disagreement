@@ -47,7 +47,8 @@ A candidate is eligible in a training episode if both conditions hold
    months available to the episode.
 
 Eligibility uses only formation months at or before the episode's training
-cutoff; validation and out-of-sample months are never inspected. It depends
+cutoff; the episode's validation and OOS blocks are not inspected when
+determining predictor eligibility. It depends
 on predictor coverage alone: no return, target value, model prediction,
 forecasting performance or H1–H4 result enters the rule. All four model
 families use the same eligible predictors within a training episode.
@@ -99,3 +100,45 @@ ranks place them on a common scale and reduce sensitivity to scale and extreme
 magnitudes. Zero, the center of rank space, provides a common neutral value for
 missing observations. The rule was fixed before any model was estimated or any
 forecasting result was examined.
+
+## Walk-forward design
+
+The baseline out-of-sample (OOS) formation-month period runs from January
+1985 through December 2024 in 40 annual episodes (`configs/baseline.yaml`,
+`walk_forward`). For OOS year $Y$, in formation months:
+
+- training: 1970-01 through $(Y-6)$-12, an expanding window;
+- validation: $(Y-5)$-01 through $(Y-1)$-12, a rolling five-year window;
+- OOS test: $Y$-01 through $Y$-12, twelve formation months, each used to
+  forecast the following month's return.
+
+The first episode trains on 1970-01–1979-12, validates on 1980-01–1984-12 and
+tests on formation months 1985-01–1985-12. The final episode trains on
+1970-01–2018-12, validates on 2019-01–2023-12 and tests on formation months
+2024-01–2024-12. Within each annual episode, the training, validation, and OOS
+formation-month blocks are chronological, contiguous, and mutually disjoint.
+Across episodes, training and validation windows overlap by design, while the
+OOS test blocks are mutually disjoint and together cover every formation month
+from 1985-01 through 2024-12 exactly once. Because the target for formation
+month $t$ is the return in $t+1$, these 480 OOS formation months correspond to
+forecasted return months from 1985-02 through 2025-01.
+
+Predictor eligibility is determined using the training block only, with
+cutoff $(Y-6)$-12, and the resulting predictor set is fixed for the episode.
+
+The validation block ends in December $Y-1$. Its final target is the
+January-$Y$ return, which is known at the January-$Y$ formation date. The
+annual model-selection/refit procedure can therefore use labeled formation
+observations through December $Y-1$ before forecasting the February-$Y$ return
+from January-$Y$ characteristics. No outcome associated with the current
+episode's OOS formation months enters that episode's training, validation,
+predictor eligibility or model selection. Implementation:
+`disagreement.walkforward.calendar`.
+
+### Rationale for the walk-forward design
+
+Chronological blocks mimic genuine forecasting. The expanding training window
+retains earlier information, while the rolling five-year validation window
+reflects more recent conditions. Annual retraining limits computational cost
+and keeps the specification fixed across the twelve OOS formation months of
+each episode.

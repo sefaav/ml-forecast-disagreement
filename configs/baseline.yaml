@@ -23,3 +23,7 @@ data:
   predictors:                             # eligibility within a training episode
     min_stock_coverage: 0.60              # observed for >= 60% of U_t in a month
     min_month_share: 0.95                 # in >= 95% of the episode's historical months
+
+walk_forward:                             # annual retraining, one OOS calendar year per episode
+  first_oos_year: 1985
+  validation_years: 5                     # rolling validation window before each OOS year
