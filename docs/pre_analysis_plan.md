@@ -142,3 +142,63 @@ retains earlier information, while the rolling five-year validation window
 reflects more recent conditions. Annual retraining limits computational cost
 and keeps the specification fixed across the twelve OOS formation months of
 each episode.
+
+## Model selection
+
+Hyperparameters are selected separately for each model family and annual
+episode (`configs/baseline.yaml`, `model_selection`):
+
+1. the eligible predictors are determined from the training block only
+   (cutoff `train_end`) and stay fixed for the episode;
+2. they are preprocessed month by month with the rank transformation above;
+3. each candidate configuration is fitted on the training block only, with
+   tuning seed 0 for stochastic fits, and predicts the five-year validation
+   block;
+4. the candidate with the highest validation score is selected; an exact tie
+   keeps the first candidate in the configured order;
+5. the selected specification is refitted on training and validation, with
+   the same predictor set;
+6. that single refitted model produces the forecasts for all twelve OOS
+   formation months of the episode, without refitting within the year.
+
+The validation score (`monthly_rank_ic`) is the equal-weighted mean, over
+validation formation months, of the monthly rank information coefficient. In
+each month, the predictions of the observations with a finite target are
+average-ranked cross-sectionally, and $IC_t$ is the Pearson correlation
+between these ranks and `target_rank`, that is, the Spearman correlation
+between predictions and next-month returns:
+
+$$IC_{\mathrm{val}} = \frac{1}{T_{\mathrm{val}}}\sum_t IC_t,
+\qquad
+IC_t = \operatorname{Corr}\bigl(\operatorname{rank}(\hat y_{i,t}), Y_{i,t+1}\bigr).$$
+
+Higher is better. Constant predictions carry no ranking information and give
+$IC_t = 0$. A validation month without any finite target, or whose target
+does not vary, is an error. No raw-return, portfolio, H1–H4 or OOS result
+enters model selection, and no outcome of the current episode's OOS formation
+months is used. Later bootstrap replicas of a family share the
+hyperparameters selected for that family and episode. Implementation: `disagreement.models.selection`.
+
+Frozen candidate spaces (Cartesian products, in this order):
+
+| Family | Fixed | Tuned | Candidates |
+|---|---|---|---:|
+| Elastic Net | — | `alpha` ∈ {1e-4, 1e-3, 1e-2, 1e-1}; `l1_ratio` ∈ {0.1, 0.5, 0.9} | 12 |
+| Random Forest | `n_estimators` = 300 | `max_depth` ∈ {4, 8, 12}; `min_samples_leaf` ∈ {20, 100}; `max_features` ∈ {sqrt, 0.5} | 12 |
+| LightGBM | `min_child_samples` = 100 | `n_estimators` ∈ {200, 500}; `learning_rate` ∈ {0.03, 0.10}; `num_leaves` ∈ {15, 31} | 8 |
+| MLP | Adam; `batch_size` = 4096; `max_epochs` = 30; no early stopping | `hidden_layers` ∈ {(64), (64, 32)}; `learning_rate` ∈ {3e-4, 1e-3}; `weight_decay` ∈ {1e-5, 1e-3} | 8 |
+
+All four families are regression models trained to predict `target_rank`
+with squared-error loss: least squares with an elastic-net penalty (Elastic
+Net), `criterion = "squared_error"` (Random Forest), the L2 `regression`
+objective (LightGBM) and mean squared error (MLP). These training objectives
+are distinct from the validation score above, which measures the monthly rank
+correlation between predictions and `target_rank`. The search spaces are not expanded or
+redefined after validation results are seen.
+
+### Rationale for the model-selection rule
+
+The validation criterion directly measures the model's ability to rank stocks
+by subsequent returns, which is the downstream use of the forecasts. Computing
+rank IC separately by month and weighting months equally prevents
+cross-sectional sample size from driving model selection.

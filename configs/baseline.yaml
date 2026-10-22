@@ -27,3 +27,38 @@ data:
 walk_forward:                             # annual retraining, one OOS calendar year per episode
   first_oos_year: 1985
   validation_years: 5                     # rolling validation window before each OOS year
+
+model_selection:                          # per family and annual episode
+  validation_metric: monthly_rank_ic      # equal-weighted mean monthly rank IC; maximize
+  seed: 0                                 # tuning seed for stochastic fits
+  elastic_net:
+    objective: squared_error              # least squares on target_rank, elastic-net penalty
+    grid:
+      alpha: [1.0e-4, 1.0e-3, 1.0e-2, 1.0e-1]
+      l1_ratio: [0.1, 0.5, 0.9]
+  random_forest:
+    objective: squared_error              # criterion
+    fixed:
+      n_estimators: 300
+    grid:
+      max_depth: [4, 8, 12]
+      min_samples_leaf: [20, 100]
+      max_features: [sqrt, 0.5]
+  lightgbm:
+    objective: regression                 # L2 (squared-error) objective
+    fixed:
+      min_child_samples: 100
+    grid:
+      n_estimators: [200, 500]
+      learning_rate: [0.03, 0.10]
+      num_leaves: [15, 31]
+  mlp:
+    objective: mse                        # mean squared error loss
+    fixed:
+      optimizer: adam
+      batch_size: 4096
+      max_epochs: 30                      # no early stopping
+    grid:
+      hidden_layers: [[64], [64, 32]]
+      learning_rate: [3.0e-4, 1.0e-3]
+      weight_decay: [1.0e-5, 1.0e-3]
