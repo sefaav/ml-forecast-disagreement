@@ -163,7 +163,7 @@ def build_panel_files(paths: DataPaths, cfg: DataConfig, osap_path: Path, signal
         panel = panel.merge(crsp.crsp_predictors(raw), on=list(KEY), how="left", validate="one_to_one")
         if len(panel) != len(members):
             raise DataValidationError("adding the CRSP predictors changed the panel rows.")
-        values = panel[predictors].to_numpy(dtype="float64")
+        values = panel[predictors].to_numpy(dtype="float64", copy=True)
         is_inf = np.isinf(values)
         infinite += int(is_inf.sum())
         values[is_inf] = np.nan  # +/- infinity is treated as missing

@@ -36,7 +36,7 @@ def rank_predictors(frame: pd.DataFrame, predictors: Sequence[str]) -> pd.DataFr
         raise DataValidationError("predictors are listed more than once.")
     require_unique_keys(frame, "predictor frame")
 
-    values = frame[predictors].to_numpy(dtype="float64", na_value=np.nan)
+    values = frame[predictors].to_numpy(dtype="float64", na_value=np.nan, copy=True)
     values[~np.isfinite(values)] = np.nan  # +/- infinity is missing
     by_month = pd.DataFrame(values, columns=predictors, index=frame.index).groupby(frame["yyyymm"].to_numpy())
     rank = by_month.rank(method="average")
