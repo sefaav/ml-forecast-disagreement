@@ -21,9 +21,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-      - name: Install the package, test dependencies and pandas ${{ matrix.pandas }}
+      - name: Install the package, test dependencies, pandas ${{ matrix.pandas }} and the locked scikit-learn
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ".[dev]" "pandas==${{ matrix.pandas }}"
+          python -m pip install -e ".[dev]" "pandas==${{ matrix.pandas }}" "scikit-learn==1.9.1"
       - name: Run the synthetic tests
         run: python -m pytest

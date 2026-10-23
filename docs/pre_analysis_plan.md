@@ -202,3 +202,17 @@ The validation criterion directly measures the model's ability to rank stocks
 by subsequent returns, which is the downstream use of the forecasts. Computing
 rank IC separately by month and weighting months equally prevents
 cross-sectional sample size from driving model selection.
+
+### Elastic Net
+
+The Elastic Net family uses `sklearn.linear_model.ElasticNet` to predict
+`target_rank` from the preprocessed predictors by minimizing
+$\frac{1}{2n}\lVert y - Xw\rVert_2^2 + \alpha\,\rho\,\lVert w\rVert_1 + \frac{\alpha(1-\rho)}{2}\lVert w\rVert_2^2$,
+with $\rho$ = `l1_ratio`. Only `alpha` and `l1_ratio` are tuned, over the grid
+above. No additional predictor scaling is applied, since the predictors are
+already monthly cross-sectional ranks. An unpenalized intercept is estimated,
+and cyclic coordinate descent (`selection = "cyclic"`) keeps the fit
+deterministic, with `max_iter = 10000` and `tol = 1e-6`. A convergence warning
+is treated as a failure; no setting is changed to obtain convergence. The
+validation criterion remains the monthly rank IC. Implementation:
+`disagreement.models.elastic_net`.
