@@ -216,3 +216,21 @@ deterministic, with `max_iter = 10000` and `tol = 1e-6`. A convergence warning
 is treated as a failure; no setting is changed to obtain convergence. The
 validation criterion remains the monthly rank IC. Implementation:
 `disagreement.models.elastic_net`.
+
+### Random Forest
+
+The Random Forest family uses `sklearn.ensemble.RandomForestRegressor` to
+predict `target_rank` from the preprocessed predictors, with
+`criterion = "squared_error"` and bootstrap sampling of the training
+observations. `n_estimators = 300` is fixed; `max_depth`, `min_samples_leaf`
+and `max_features` are tuned over the grid above, and the other parameters keep
+their scikit-learn defaults. The tuning seed is fixed at 0
+(`random_state = 0`) for every candidate, so the bootstrap samples and feature
+draws are reproducible. Fitting uses `n_jobs = -1` for computational
+efficiency, while prediction runs serially (`n_jobs = 1`) so that the tree
+predictions are always aggregated in the same order and are reproducible bit
+for bit; this computational choice does not alter the fitted forest or the
+statistical specification. No additional preprocessing is applied, and the
+trees' native missing-value handling is not used since missing predictors are
+already set to 0. The validation criterion remains the equal-weighted mean
+monthly rank IC. Implementation: `disagreement.models.random_forest`.
