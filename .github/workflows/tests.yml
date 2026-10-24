@@ -21,9 +21,9 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
-      - name: Install the package, test dependencies, pandas ${{ matrix.pandas }} and the locked scikit-learn
+      - name: Install the package, test dependencies, pandas ${{ matrix.pandas }}, locked scikit-learn and LightGBM
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ".[dev]" "pandas==${{ matrix.pandas }}" "scikit-learn==1.9.1"
+          python -m pip install -e ".[dev]" "pandas==${{ matrix.pandas }}" "scikit-learn==1.9.1" "lightgbm==4.7.0"
       - name: Run the synthetic tests
         run: python -m pytest

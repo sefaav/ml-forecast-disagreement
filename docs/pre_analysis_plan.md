@@ -234,3 +234,23 @@ statistical specification. No additional preprocessing is applied, and the
 trees' native missing-value handling is not used since missing predictors are
 already set to 0. The validation criterion remains the equal-weighted mean
 monthly rank IC. Implementation: `disagreement.models.random_forest`.
+
+### LightGBM
+
+The LightGBM family uses `lightgbm.LGBMRegressor` to predict `target_rank`
+from the preprocessed predictors, with the L2 regression objective
+(`objective = "regression"`) and standard GBDT.
+`min_child_samples = 100` is fixed; `n_estimators`, `learning_rate` and
+`num_leaves` are tuned over the grid above, and the other parameters keep their
+LightGBM defaults. No evaluation set, early-stopping callback, or other
+early-stopping mechanism is used; the candidate's `n_estimators` is passed
+directly to LightGBM. The realized number of fitted boosting iterations may
+nevertheless be smaller if LightGBM cannot construct additional trees. CPU
+deterministic mode is enabled (`device_type = "cpu"`, `deterministic = True`,
+`force_col_wise = True`) with the tuning seed 0 (`random_state = 0`), so
+repeated fits are reproducible within a fixed software environment. Fitting is
+parallelized (`n_jobs = -1`), while predictions are made with a single thread.
+No additional preprocessing is applied, and LightGBM's native missing-value
+handling is not used since missing predictors are already set to 0. Model
+selection remains based on the equal-weighted mean monthly rank IC.
+Implementation: `disagreement.models.lightgbm`.
