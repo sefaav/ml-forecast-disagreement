@@ -275,3 +275,16 @@ so repeated runs are reproducible within a fixed software and hardware
 environment. No additional preprocessing is applied. Model selection uses the
 equal-weighted mean monthly rank IC, not the training loss. Implementation:
 `disagreement.models.mlp`.
+
+## Month-cluster bootstrap
+
+The bootstrap resamples formation months, not individual stock-month
+observations. If the historical estimation sample contains $M$ distinct
+formation months, $M$ months are drawn with replacement from them. Each
+selected month contributes its complete stock cross-section; a month drawn
+several times contributes its complete cross-section that many times, and a
+month that is not drawn contributes no rows. The resampling operates on
+already preprocessed, model-ready observations: predictor ranks and
+`target_rank` are not recomputed within a bootstrap sample. The draws are
+deterministic given the supplied seed. Implementation:
+`disagreement.bootstrap.months.month_cluster_bootstrap`.
