@@ -114,6 +114,8 @@ def build_targets(paths: DataPaths, cfg: DataConfig) -> dict:
         raise
     if previous.exists():
         shutil.rmtree(previous)
+    if paths.oos_predictions.exists():  # forecasts of the replaced targets are stale
+        shutil.rmtree(paths.oos_predictions)
     return {
         "first_month": min(months),
         "last_month": max(months),

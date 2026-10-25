@@ -62,3 +62,7 @@ model_selection:                          # per family and annual episode
       hidden_layers: [[64], [64, 32]]
       learning_rate: [3.0e-4, 1.0e-3]
       weight_decay: [1.0e-5, 1.0e-3]
+
+bootstrap:                                # month-cluster bootstrap replicas of each family
+  replicas: 5
+  base_seed: 0                            # with the OOS year and replica, seeds each month draw

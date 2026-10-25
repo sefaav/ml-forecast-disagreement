@@ -101,7 +101,11 @@ def _concat(files):
 
 def test_build_end_to_end_on_synthetic_files(tmp_path, capsys):
     paths, argv = _setup(tmp_path)
+    stale = paths.oos_predictions / "elastic_net" / "1985.json"
+    stale.parent.mkdir(parents=True)
+    stale.write_text("from an earlier build")
     assert main(argv) == 0
+    assert not paths.oos_predictions.exists()  # forecasts of the old panel are removed
     summary = json.loads((paths.diagnostics / "summary.json").read_text())
     captured = capsys.readouterr()
     output = (captured.out + captured.err).replace(summary["osap_sha256"], "")

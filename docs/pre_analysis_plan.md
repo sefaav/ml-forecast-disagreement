@@ -288,3 +288,27 @@ already preprocessed, model-ready observations: predictor ranks and
 `target_rank` are not recomputed within a bootstrap sample. The draws are
 deterministic given the supplied seed. Implementation:
 `disagreement.bootstrap.months.month_cluster_bootstrap`.
+
+## Out-of-sample replica forecasts
+
+For each annual episode and model family, hyperparameters are selected once,
+on training → validation, as described above: the eligible predictors come
+from the training block only, every candidate is fitted on the original
+training block (observations with a finite `target_rank`) and scored on the
+validation block, and the selected hyperparameters are then frozen. Five
+replicas (`configs/baseline.yaml`, `bootstrap`) are each trained on a
+month-cluster bootstrap of the whole pre-OOS history, training and validation,
+drawn from all of its formation months; resampled observations without a
+finite `target_rank` are left out of the fit only. The bootstrap seed of a
+replica is derived from the base seed 0, the OOS year and the replica number
+(`numpy.random.SeedSequence`), so within a given year and replica the four
+families resample the same months. Model-internal randomness stays fixed at
+the tuning seed 0, so the variation across replicas comes from resampling
+historical months. Each replica predicts every stock of the twelve OOS
+formation months without refitting within the year. The raw predictions are
+stored, one file per family and OOS year, and are not ranked at this stage.
+Targets are read only through December $Y-1$, so no outcome of the current
+OOS year enters estimation or selection. Implementation:
+`disagreement.walkforward.forecast`
+(`python -m disagreement.walkforward.forecast`, output under
+`data/processed/oos_predictions/`).
