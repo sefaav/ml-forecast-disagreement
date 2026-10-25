@@ -254,3 +254,24 @@ No additional preprocessing is applied, and LightGBM's native missing-value
 handling is not used since missing predictors are already set to 0. Model
 selection remains based on the equal-weighted mean monthly rank IC.
 Implementation: `disagreement.models.lightgbm`.
+
+### MLP
+
+The MLP family is a fully connected feed-forward network implemented in
+PyTorch that predicts `target_rank` from the preprocessed predictors. Each
+hidden layer is a linear layer followed by a ReLU activation, and the output is
+a single linear unit without activation; the hidden layers are `[64]` or
+`[64, 32]`. Weights use PyTorch's default initialization, and there is no
+dropout or batch normalization. Training minimizes the mean squared error
+with Adam (`betas = (0.9, 0.999)`, `eps = 1e-8`) and standard coupled weight
+decay, not AdamW; the learning rate and the weight decay are tuned over the
+grid above. Each candidate trains for exactly 30 epochs with
+`batch_size = 4096`, without early stopping, learning-rate schedule or
+gradient clipping; every epoch visits each observation once, in a new
+permutation, and keeps the last, smaller mini-batch. The tuning seed 0 fixes
+the initialization and the sequence of epoch permutations, and training and
+prediction run on the CPU in float32 with PyTorch's deterministic algorithms,
+so repeated runs are reproducible within a fixed software and hardware
+environment. No additional preprocessing is applied. Model selection uses the
+equal-weighted mean monthly rank IC, not the training loss. Implementation:
+`disagreement.models.mlp`.
