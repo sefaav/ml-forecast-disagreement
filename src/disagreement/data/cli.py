@@ -28,7 +28,7 @@ def cmd_crsp_extract(args, cfg, paths: DataPaths) -> None:
     remove_derived_outputs(paths)  # they describe the replaced extract
     n_rows = sum(manifest["rows_by_year"].values())
     print(f"  {manifest['table_first_date']} to {manifest['table_last_date']}: {n_rows:,} rows")
-    print("Universe, panel, target and OOS forecasts removed; run build again.")
+    print("Universe, panel, target, OOS forecasts and family signals removed; run build again.")
 
 
 def _print_summary(title: str, summary: dict) -> None:

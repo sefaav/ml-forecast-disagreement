@@ -312,3 +312,22 @@ OOS year enters estimation or selection. Implementation:
 `disagreement.walkforward.forecast`
 (`python -m disagreement.walkforward.forecast`, output under
 `data/processed/oos_predictions/`).
+
+## Family signals
+
+The raw OOS predictions are turned into ranks month by month, separately for
+each model family. Within each OOS formation month, the predictions of each
+replica are ranked across stocks with average ranks for ties and mapped to
+$[0, 1]$,
+
+$$q^{(r)}_{i,f,t} = \frac{\operatorname{rank}^{(r)}_{i,f,t} - 1}{n_t - 1},$$
+
+with $q = 0.5$ when $n_t = 1$; a constant cross-section maps to 0.5. Each
+stock's mean replica rank $\bar q_{i,f,t}$ averages its five replica ranks,
+and the family rank re-ranks $\bar q_{i,f,t}$ across the month's stocks with
+the same convention. Raw predictions are never averaged across replicas,
+ranks never cross months, replicas or families, and no target or return is
+used. The output keeps one row per replica, with the replica rank, the mean
+replica rank and the family rank. Implementation:
+`disagreement.signals.family` (`python -m disagreement.signals.family`,
+output under `data/processed/family_signals/`).

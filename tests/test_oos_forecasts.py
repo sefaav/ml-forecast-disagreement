@@ -227,3 +227,16 @@ def test_a_historical_panel_row_without_a_target_row_is_an_error(tmp_path):
     rows.iloc[1:].to_parquet(file, index=False)  # one validation-block target row deleted, panel row kept
     with pytest.raises(forecast.DataValidationError, match="1 historical panel observations have no target row"):
         forecast.prepare_episode(paths, load_data_config(config_path), baseline_episodes(config_path)[0])
+
+
+def test_regenerating_a_forecast_removes_only_its_family_signal(tmp_path):
+    paths, config_path, panel, target = _setup(tmp_path)
+    matching = [paths.family_signals / "elastic_net" / f"2004.{suffix}" for suffix in ("parquet", "json", "json.tmp")]
+    unrelated = [paths.family_signals / "elastic_net" / "2005.json", paths.family_signals / "lightgbm" / "2004.json"]
+    for path in matching + unrelated:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("signal of an earlier forecast")
+    forecast.run_baseline_forecasts(paths, config_path, ["elastic_net"], [2004], log=lambda _: None)
+    assert not any(path.exists() for path in matching)
+    assert all(path.read_text() == "signal of an earlier forecast" for path in unrelated)
+    assert (paths.oos_predictions / "elastic_net" / "2004.json").exists()  # the forecast itself completed

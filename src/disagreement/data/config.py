@@ -46,6 +46,10 @@ class DataPaths:
         return self.root / "processed" / "oos_predictions"
 
     @property
+    def family_signals(self) -> Path:
+        return self.root / "processed" / "family_signals"
+
+    @property
     def diagnostics(self) -> Path:
         return self.root / "diagnostics"
 

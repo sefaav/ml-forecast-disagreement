@@ -129,17 +129,20 @@ def test_failed_target_build_keeps_the_previous_target(tmp_path):
         _write_crsp(crsp_dir, records, year)
     build_targets(paths, cfg)
     before = (paths.target / "target_2000.parquet").read_bytes()
-    forecasts = paths.oos_predictions / "elastic_net" / "2001.json"  # made from these targets
-    forecasts.parent.mkdir(parents=True)
-    forecasts.write_text("forecasts of the current targets")
+    downstream = [paths.oos_predictions / "elastic_net" / "2001.json", paths.family_signals / "elastic_net" / "2001.json"]
+    for output in downstream:  # made from these targets
+        output.parent.mkdir(parents=True)
+        output.write_text("from the current targets")
 
     _write_crsp(crsp_dir, rows[2001] * 2, 2001)  # duplicate key: fails while building
     with pytest.raises(DataValidationError, match="CRSP returns"):
         build_targets(paths, cfg)
     assert [f.name for f in paths.target.iterdir()] == ["target_2000.parquet"]
     assert (paths.target / "target_2000.parquet").read_bytes() == before
-    assert forecasts.read_text() == "forecasts of the current targets"  # still valid: kept
-    assert sorted(d.name for d in paths.target.parent.iterdir()) == ["oos_predictions", "target", "universe"]
+    assert all(output.read_text() == "from the current targets" for output in downstream)  # still valid: kept
+    assert sorted(d.name for d in paths.target.parent.iterdir()) == [
+        "family_signals", "oos_predictions", "target", "universe",
+    ]
 
     _write_crsp(crsp_dir, [crsp_row(1, "2001-01", 10.0, mthret=0.09)], 2001)
     build_targets(paths, cfg)  # a successful build replaces it

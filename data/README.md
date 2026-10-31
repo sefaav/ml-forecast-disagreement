@@ -29,19 +29,21 @@ python -m venv .venv
 .venv\Scripts\python -m disagreement.data build          # universe, panel, validation
 .venv\Scripts\python -m disagreement.data target         # next-month return and ranked target
 .venv\Scripts\python -m disagreement.walkforward.forecast [--family F] [--year Y]   # OOS replica forecasts
+.venv\Scripts\python -m disagreement.signals.family [--family F] [--year Y]        # replica and family ranks
 .venv\Scripts\python -m pytest                           # synthetic tests
 ```
 
 `crsp-extract` reads the WRDS username from `--wrds-username` or
 `WRDS_USERNAME`, otherwise `wrds` prompts. It downloads the whole table into
 a temporary directory, which replaces the previous extract only after the
-extraction succeeds; the universe, panel, target, OOS forecasts and their
-diagnostics are then removed, so `build` must be run again. `build` checks
-the extract against `_manifest.json` and the OSAP archive against the pinned
-release before touching earlier outputs. `target` reads the universe of the
-last successful build and the CRSP extract; `build` removes it together with
-the universe, panel and OOS forecasts, and a successful `target` run removes
-the OOS forecasts. All commands print aggregate information only.
+extraction succeeds; the universe, panel, target, OOS forecasts, family
+signals and their diagnostics are then removed, so `build` must be run again.
+`build` checks the extract against `_manifest.json` and the OSAP archive
+against the pinned release before touching earlier outputs. `target` reads
+the universe of the last successful build and the CRSP extract; `build`
+removes it together with the universe, panel, OOS forecasts and family
+signals, and a successful `target` run removes the OOS forecasts and family
+signals. All commands print aggregate information only.
 
 ## Local files
 
@@ -56,6 +58,7 @@ data/
     panel/            U_t x 212 predictors, one file per year
     target/           ret_next and target_rank, one file per year
     oos_predictions/  raw replica forecasts, one file per family and OOS year
+    family_signals/   replica and family ranks, one file per family and OOS year
   diagnostics/        summary.json, universe_by_month.csv
 ```
 

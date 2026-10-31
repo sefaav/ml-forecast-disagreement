@@ -247,6 +247,13 @@ def _completion_marker(paths: DataPaths, family: str, oos_year: int) -> Path:
     return paths.oos_predictions / family / f"{oos_year}.json"
 
 
+def _remove_family_signal(paths: DataPaths, family: str, oos_year: int) -> None:
+    """The downstream family signal of this family-year, which a new forecast makes stale."""
+    directory = paths.family_signals / family
+    for name in (f"{oos_year}.json", f"{oos_year}.parquet", f"{oos_year}.json.tmp", f"{oos_year}.parquet.tmp"):
+        (directory / name).unlink(missing_ok=True)
+
+
 def _write(directory: Path, oos_year: int, frame: pd.DataFrame, metadata: dict) -> None:
     """Atomic writes; the JSON sidecar, replaced last, marks a complete family-year."""
     directory.mkdir(parents=True, exist_ok=True)
@@ -293,8 +300,9 @@ def run_baseline_forecasts(
         data = prepare_episode(paths, cfg, episode)
         seeds = bootstrap_seeds(base_seed, episode.oos_year, replicas)
         for family in families:
-            # The family-year is not complete until its metadata is rewritten.
+            # The family-year is not complete until its metadata is rewritten; its signal is stale.
             _completion_marker(paths, family, episode.oos_year).unlink(missing_ok=True)
+            _remove_family_signal(paths, family, episode.oos_year)
             frame, metadata = run_family_episode(data, family, model_candidates(family, config_path), seeds)
             metadata["model_seed"] = model_seed
             _write(paths.oos_predictions / family, episode.oos_year, frame, metadata)
