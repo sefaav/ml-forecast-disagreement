@@ -114,7 +114,7 @@ def build_targets(paths: DataPaths, cfg: DataConfig) -> dict:
         raise
     if previous.exists():
         shutil.rmtree(previous)
-    for stale in (paths.oos_predictions, paths.family_signals):  # forecasts of the replaced targets
+    for stale in (paths.oos_predictions, paths.family_signals, paths.ensemble_signals):  # from the replaced targets
         if stale.exists():
             shutil.rmtree(stale)
     return {

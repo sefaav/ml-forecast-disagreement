@@ -95,6 +95,12 @@ def load_predictions(paths: DataPaths, family: str, oos_year: int, replicas: int
     return frame
 
 
+def remove_ensemble_signal(paths: DataPaths, oos_year: int) -> None:
+    """The ensemble of this OOS year, which a new signal of any of its families makes stale."""
+    for name in (f"{oos_year}.json", f"{oos_year}.parquet", f"{oos_year}.json.tmp", f"{oos_year}.parquet.tmp"):
+        (paths.ensemble_signals / name).unlink(missing_ok=True)
+
+
 def _write(directory: Path, oos_year: int, frame: pd.DataFrame, metadata: dict) -> None:
     """Atomic writes; the JSON sidecar, replaced last, marks a complete family-year."""
     directory.mkdir(parents=True, exist_ok=True)
@@ -138,6 +144,7 @@ def run_family_signals(
         for family in families:
             directory = paths.family_signals / family
             (directory / f"{oos_year}.json").unlink(missing_ok=True)  # not complete until rewritten
+            remove_ensemble_signal(paths, oos_year)
             predictions = load_predictions(paths, family, oos_year, replicas)
             signals = family_signals(predictions, replicas)
             source = paths.oos_predictions / family / f"{oos_year}.parquet"

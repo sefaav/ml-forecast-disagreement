@@ -229,14 +229,34 @@ def test_a_historical_panel_row_without_a_target_row_is_an_error(tmp_path):
         forecast.prepare_episode(paths, load_data_config(config_path), baseline_episodes(config_path)[0])
 
 
-def test_regenerating_a_forecast_removes_only_its_family_signal(tmp_path):
+def test_regenerating_a_forecast_removes_only_its_family_signal_and_ensemble(tmp_path, monkeypatch):
     paths, config_path, panel, target = _setup(tmp_path)
-    matching = [paths.family_signals / "elastic_net" / f"2004.{suffix}" for suffix in ("parquet", "json", "json.tmp")]
+    suffixes = ("parquet", "json", "parquet.tmp", "json.tmp")
+    matching = [paths.family_signals / "elastic_net" / f"2004.{suffix}" for suffix in suffixes]
+    matching += [paths.ensemble_signals / f"2004.{suffix}" for suffix in suffixes]
     unrelated = [paths.family_signals / "elastic_net" / "2005.json", paths.family_signals / "lightgbm" / "2004.json"]
-    for path in matching + unrelated:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text("signal of an earlier forecast")
+    unrelated += [paths.ensemble_signals / "2005.json"]
+    marker = paths.oos_predictions / "elastic_net" / "2004.json"
+
+    def plant(paths_to_write):
+        for path in paths_to_write:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("signal of an earlier forecast")
+
+    plant(matching + unrelated)
     forecast.run_baseline_forecasts(paths, config_path, ["elastic_net"], [2004], log=lambda _: None)
     assert not any(path.exists() for path in matching)
     assert all(path.read_text() == "signal of an earlier forecast" for path in unrelated)
-    assert (paths.oos_predictions / "elastic_net" / "2004.json").exists()  # the forecast itself completed
+    assert marker.exists()  # the forecast itself completed
+
+    plant(matching)  # signals of the completed forecast; the rerun then fails while computing
+
+    def fail(*args, **kwargs):
+        raise RuntimeError("forced forecast failure")
+
+    monkeypatch.setattr(forecast, "run_family_episode", fail)
+    with pytest.raises(RuntimeError, match="forced forecast failure"):
+        forecast.run_baseline_forecasts(paths, config_path, ["elastic_net"], [2004], log=lambda _: None)
+    assert not any(path.exists() for path in matching)  # invalidated before the computation started
+    assert all(path.read_text() == "signal of an earlier forecast" for path in unrelated)
+    assert not marker.exists()  # the failed forecast is not marked complete

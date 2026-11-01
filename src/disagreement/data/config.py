@@ -50,6 +50,10 @@ class DataPaths:
         return self.root / "processed" / "family_signals"
 
     @property
+    def ensemble_signals(self) -> Path:
+        return self.root / "processed" / "ensemble_signals"
+
+    @property
     def diagnostics(self) -> Path:
         return self.root / "diagnostics"
 

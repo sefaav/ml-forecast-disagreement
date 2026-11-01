@@ -131,11 +131,30 @@ def test_incomplete_forecasts_are_rejected_and_leave_no_completion_marker(tmp_pa
     source = paths.oos_predictions / "elastic_net" / "2004.parquet"
     predictions = pd.read_parquet(source)
     predictions.iloc[1:].to_parquet(source, index=False)  # one stock-month loses a replica
+    stale = [paths.ensemble_signals / "2004.parquet", paths.ensemble_signals / "2004.json"]
+    unrelated = paths.ensemble_signals / "2005.json"
+    paths.ensemble_signals.mkdir(parents=True)
+    for path in stale + [unrelated]:
+        path.write_text("completed ensemble")
     assert main(argv) == 2
     assert "exactly replicas 0..4" in capsys.readouterr().err
     assert not (paths.family_signals / "elastic_net" / "2004.json").exists()  # not averaged over four
+    assert not any(path.exists() for path in stale)  # stale as soon as the rerun starts, even though it failed
+    assert unrelated.read_text() == "completed ensemble"
 
     (paths.oos_predictions / "elastic_net" / "2004.json").unlink()
     predictions.to_parquet(source, index=False)
     assert main(argv) == 2  # predictions without their completion marker
     assert "no complete OOS predictions" in capsys.readouterr().err
+
+
+def test_regenerating_a_family_signal_removes_only_that_years_ensemble(tmp_path):
+    paths, argv, _ = _setup(tmp_path)
+    matching = [paths.ensemble_signals / f"2004.{suffix}" for suffix in ("parquet", "json", "parquet.tmp", "json.tmp")]
+    unrelated = [paths.ensemble_signals / "2005.parquet", paths.ensemble_signals / "2005.json"]
+    for path in matching + unrelated:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("ensemble of earlier family signals")
+    assert main(argv) == 0
+    assert not any(path.exists() for path in matching)
+    assert all(path.read_text() == "ensemble of earlier family signals" for path in unrelated)

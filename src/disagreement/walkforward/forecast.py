@@ -51,6 +51,7 @@ from disagreement.models.mlp import fit_mlp, predict_mlp
 from disagreement.models.random_forest import fit_random_forest, predict_random_forest
 from disagreement.models.selection import FAMILIES, model_candidates, select_candidate, tuning_seed, validation_score
 from disagreement.preprocessing.ranks import rank_predictors
+from disagreement.signals.family import remove_ensemble_signal
 from disagreement.walkforward.calendar import Episode, baseline_episodes
 
 OUTPUT_COLUMNS = ("permno", "yyyymm", "family", "replica", "prediction")
@@ -300,9 +301,10 @@ def run_baseline_forecasts(
         data = prepare_episode(paths, cfg, episode)
         seeds = bootstrap_seeds(base_seed, episode.oos_year, replicas)
         for family in families:
-            # The family-year is not complete until its metadata is rewritten; its signal is stale.
+            # The family-year is not complete until its metadata is rewritten; its signals are stale.
             _completion_marker(paths, family, episode.oos_year).unlink(missing_ok=True)
             _remove_family_signal(paths, family, episode.oos_year)
+            remove_ensemble_signal(paths, episode.oos_year)
             frame, metadata = run_family_episode(data, family, model_candidates(family, config_path), seeds)
             metadata["model_seed"] = model_seed
             _write(paths.oos_predictions / family, episode.oos_year, frame, metadata)

@@ -109,6 +109,7 @@ def _derived_outputs(paths):
         paths.universe / "universe_2000.parquet",
         paths.panel / "panel_2000.parquet",
         paths.target / "target_2000.parquet",
+        paths.ensemble_signals / "1985.json",
         paths.diagnostics / "summary.json",
         paths.diagnostics / "universe_by_month.csv",
     ]

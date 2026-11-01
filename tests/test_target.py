@@ -129,7 +129,11 @@ def test_failed_target_build_keeps_the_previous_target(tmp_path):
         _write_crsp(crsp_dir, records, year)
     build_targets(paths, cfg)
     before = (paths.target / "target_2000.parquet").read_bytes()
-    downstream = [paths.oos_predictions / "elastic_net" / "2001.json", paths.family_signals / "elastic_net" / "2001.json"]
+    downstream = [
+        paths.oos_predictions / "elastic_net" / "2001.json",
+        paths.family_signals / "elastic_net" / "2001.json",
+        paths.ensemble_signals / "2001.json",
+    ]
     for output in downstream:  # made from these targets
         output.parent.mkdir(parents=True)
         output.write_text("from the current targets")
@@ -141,7 +145,7 @@ def test_failed_target_build_keeps_the_previous_target(tmp_path):
     assert (paths.target / "target_2000.parquet").read_bytes() == before
     assert all(output.read_text() == "from the current targets" for output in downstream)  # still valid: kept
     assert sorted(d.name for d in paths.target.parent.iterdir()) == [
-        "family_signals", "oos_predictions", "target", "universe",
+        "ensemble_signals", "family_signals", "oos_predictions", "target", "universe",
     ]
 
     _write_crsp(crsp_dir, [crsp_row(1, "2001-01", 10.0, mthret=0.09)], 2001)

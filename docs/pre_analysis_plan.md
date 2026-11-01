@@ -331,3 +331,22 @@ used. The output keeps one row per replica, with the replica rank, the mean
 replica rank and the family rank. Implementation:
 `disagreement.signals.family` (`python -m disagreement.signals.family`,
 output under `data/processed/family_signals/`).
+
+## Ensemble signal
+
+For each stock $i$ and OOS formation month $t$, the ensemble signal is the
+equal-weight average of the four family ranks,
+
+$$S_{i,t} = \frac{1}{4}\left(R^{EN}_{i,t} + R^{RF}_{i,t} + R^{LGBM}_{i,t} + R^{MLP}_{i,t}\right),$$
+
+where $R^{f}_{i,t}$ is the family rank of family $f$, on $[0, 1]$. $S_{i,t}$
+is not re-ranked, centred or rescaled, so it lies in $[0, 1]$ but is not
+itself a cross-sectional rank. Raw predictions, replica ranks and mean replica
+ranks are not averaged across families, and no target or return is used. The
+ensemble is defined only where all four families are present: the four
+families must cover exactly the same stock-months, spanning all twelve months
+of the OOS year, and a stock-month missing from any family is an error rather
+than dropped. The output has one row per
+stock-month, with the four family ranks and $S_{i,t}$. Implementation:
+`disagreement.signals.ensemble` (`python -m disagreement.signals.ensemble`,
+output under `data/processed/ensemble_signals/`).
