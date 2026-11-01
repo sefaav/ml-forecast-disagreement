@@ -131,7 +131,7 @@ def test_incomplete_forecasts_are_rejected_and_leave_no_completion_marker(tmp_pa
     source = paths.oos_predictions / "elastic_net" / "2004.parquet"
     predictions = pd.read_parquet(source)
     predictions.iloc[1:].to_parquet(source, index=False)  # one stock-month loses a replica
-    downstream = (paths.ensemble_signals, paths.between_family_disagreement)
+    downstream = (paths.ensemble_signals, paths.between_family_disagreement, paths.within_family_uncertainty)
     stale = [d / f"2004.{suffix}" for d in downstream for suffix in ("parquet", "json")]
     unrelated = [d / "2005.json" for d in downstream]
     for path in stale + unrelated:
@@ -151,8 +151,8 @@ def test_incomplete_forecasts_are_rejected_and_leave_no_completion_marker(tmp_pa
 
 def test_regenerating_a_family_signal_removes_only_that_years_ensemble(tmp_path):
     paths, argv, _ = _setup(tmp_path)
-    downstream = (paths.ensemble_signals, paths.between_family_disagreement)
-    matching = [d / f"2004.{suffix}" for d in downstream for suffix in ("parquet", "json", "parquet.tmp", "json.tmp")]
+    downstream = (paths.ensemble_signals, paths.between_family_disagreement, paths.within_family_uncertainty)
+    matching =[d / f"2004.{suffix}" for d in downstream for suffix in ("parquet", "json", "parquet.tmp", "json.tmp")]
     unrelated = [d / f"2005.{suffix}" for d in downstream for suffix in ("parquet", "json")]
     for path in matching + unrelated:
         path.parent.mkdir(parents=True, exist_ok=True)

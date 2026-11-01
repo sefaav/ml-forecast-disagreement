@@ -370,3 +370,35 @@ four family ranks. The output has one row per stock-month, with $S_{i,t}$ and
 $D^{B,\mathrm{raw}}_{i,t}$. Implementation: `disagreement.signals.between`
 (`python -m disagreement.signals.between`, output under
 `data/processed/between_family_disagreement/`).
+
+## Within-family estimation uncertainty
+
+For each model family $f$, stock $i$ and OOS formation month $t$, the
+estimation uncertainty is the dispersion of the stock's $K$ replica ranks
+$q^{(r)}_{i,f,t}$ ($K = 5$ bootstrap replicas in the baseline),
+
+$$D^{W,f}_{i,t} = \sqrt{\frac{1}{K-1}\sum_{r=1}^{K}\left(q^{(r)}_{i,f,t} - \bar q_{i,f,t}\right)^2},$$
+
+the sample standard deviation (`ddof = 1`): unlike the four fixed families
+of the between-family disagreement, the replicas are bootstrap draws that
+approximate estimation uncertainty. It is computed from the saved replica
+ranks, not from raw predictions, mean replica ranks or family ranks. Each
+family's $D^{W,f}_{i,t}$ is then ranked across the month's stocks, separately
+for each family and month, with average ranks for ties and the convention of
+the family signals,
+
+$$R^{W,f}_{i,t} = \frac{\operatorname{rank}(D^{W,f}_{i,t}) - 1}{n_t - 1} \in [0, 1],$$
+
+with 0.5 when $n_t = 1$ or when the month's dispersions are all equal. The
+raw within-family uncertainty is the equal-weight mean of the four family
+uncertainty ranks,
+
+$$W^{\mathrm{raw}}_{i,t} = \frac{1}{4}\left(R^{W,EN}_{i,t} + R^{W,RF}_{i,t} + R^{W,LGBM}_{i,t} + R^{W,MLP}_{i,t}\right) \in [0, 1].$$
+
+It is not re-ranked and not yet conditioned on the ensemble signal, and no
+target or return is used. The four families must cover exactly the same
+stock-months over the twelve OOS months. The output has one row per
+stock-month, with the four $D^{W,f}_{i,t}$, the four $R^{W,f}_{i,t}$ and
+$W^{\mathrm{raw}}_{i,t}$. Implementation: `disagreement.signals.within`
+(`python -m disagreement.signals.within`, output under
+`data/processed/within_family_uncertainty/`).

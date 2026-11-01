@@ -58,6 +58,10 @@ class DataPaths:
         return self.root / "processed" / "between_family_disagreement"
 
     @property
+    def within_family_uncertainty(self) -> Path:
+        return self.root / "processed" / "within_family_uncertainty"
+
+    @property
     def diagnostics(self) -> Path:
         return self.root / "diagnostics"
 

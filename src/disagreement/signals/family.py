@@ -105,6 +105,11 @@ def remove_between_family_disagreement(paths: DataPaths, oos_year: int) -> None:
     _remove_year(paths.between_family_disagreement, oos_year)
 
 
+def remove_within_family_uncertainty(paths: DataPaths, oos_year: int) -> None:
+    """The within-family uncertainty of this OOS year, which a new signal of any family makes stale."""
+    _remove_year(paths.within_family_uncertainty, oos_year)
+
+
 def remove_ensemble_signal(paths: DataPaths, oos_year: int) -> None:
     """The ensemble of this OOS year and its disagreement, which a new signal of any family makes stale."""
     _remove_year(paths.ensemble_signals, oos_year)
@@ -155,6 +160,7 @@ def run_family_signals(
             directory = paths.family_signals / family
             (directory / f"{oos_year}.json").unlink(missing_ok=True)  # not complete until rewritten
             remove_ensemble_signal(paths, oos_year)
+            remove_within_family_uncertainty(paths, oos_year)
             predictions = load_predictions(paths, family, oos_year, replicas)
             signals = family_signals(predictions, replicas)
             source = paths.oos_predictions / family / f"{oos_year}.parquet"

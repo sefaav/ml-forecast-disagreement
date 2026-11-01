@@ -130,8 +130,9 @@ def test_mismatched_or_incomplete_family_signals_leave_no_completion_marker(tmp_
     disagreement = paths.between_family_disagreement
     stale = [disagreement / f"2004.{suffix}" for suffix in ("parquet", "json", "parquet.tmp", "json.tmp")]
     unrelated = disagreement / "2005.json"
-    disagreement.mkdir(parents=True)
-    for path in stale + [unrelated]:
+    within = paths.within_family_uncertainty / "2004.json"  # depends on the family signals only
+    for path in stale + [unrelated, within]:
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("disagreement of an earlier ensemble")
 
     permno, month = keys[3]
@@ -141,7 +142,7 @@ def test_mismatched_or_incomplete_family_signals_leave_no_completion_marker(tmp_
     assert "mlp covers different stock-months than elastic_net: 1 missing, 0 extra" in capsys.readouterr().err
     assert not marker.exists()  # not an inner join over the other stock-months
     assert not any(path.exists() for path in stale)  # stale as soon as the ensemble rerun starts
-    assert unrelated.read_text() == "disagreement of an earlier ensemble"
+    assert unrelated.read_text() == within.read_text() == "disagreement of an earlier ensemble"
 
     extra = _signals("mlp", {(99, 200401): 0.5})
     pd.concat([signals, extra], ignore_index=True).to_parquet(source, index=False)

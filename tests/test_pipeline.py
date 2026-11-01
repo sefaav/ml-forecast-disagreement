@@ -102,7 +102,7 @@ def _concat(files):
 def test_build_end_to_end_on_synthetic_files(tmp_path, capsys):
     paths, argv = _setup(tmp_path)
     downstream = (paths.oos_predictions, paths.family_signals, paths.ensemble_signals)
-    downstream += (paths.between_family_disagreement,)
+    downstream += (paths.between_family_disagreement, paths.within_family_uncertainty)
     for directory in (downstream[0] / "elastic_net", downstream[1] / "elastic_net", *downstream[2:]):
         directory.mkdir(parents=True)
         (directory / "1985.json").write_text("from an earlier build")

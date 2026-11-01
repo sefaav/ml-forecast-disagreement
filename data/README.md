@@ -32,6 +32,7 @@ python -m venv .venv
 .venv\Scripts\python -m disagreement.signals.family [--family F] [--year Y]        # replica and family ranks
 .venv\Scripts\python -m disagreement.signals.ensemble [--year Y]                   # mean of the four family ranks
 .venv\Scripts\python -m disagreement.signals.between [--year Y]                    # SD of the four family ranks
+.venv\Scripts\python -m disagreement.signals.within [--year Y]                     # replica-rank SD, ranked by family
 .venv\Scripts\python -m pytest                           # synthetic tests
 ```
 
@@ -39,19 +40,22 @@ python -m venv .venv
 `WRDS_USERNAME`, otherwise `wrds` prompts. It downloads the whole table into
 a temporary directory, which replaces the previous extract only after the
 extraction succeeds; the universe, panel, target, OOS forecasts, family and
-ensemble signals, between-family disagreement and their diagnostics are then
-removed, so `build` must be run again. `build` checks the extract against
-`_manifest.json` and the OSAP archive against the pinned release before
-touching earlier outputs. `target` reads the universe of the last successful
-build and the CRSP extract; `build` removes it together with the universe,
-panel, OOS forecasts, signals and disagreement, and a successful `target` run
-removes the OOS forecasts, signals and disagreement. Rerunning a forecast,
-family signal or ensemble for an OOS year first removes everything downstream
-of it for that year, including the ensemble and the between-family
-disagreement of that year. The ensemble is the plain mean of the four family
-ranks, not re-ranked; the between-family disagreement is their population
-standard deviation, not re-ranked. All commands print aggregate information
-only.
+ensemble signals, between-family disagreement, within-family uncertainty and
+their diagnostics are then removed, so `build` must be run again. `build`
+checks the extract against `_manifest.json` and the OSAP archive against the
+pinned release before touching earlier outputs. `target` reads the universe
+of the last successful build and the CRSP extract; `build` removes it
+together with the universe, panel, OOS forecasts, signals, disagreement and
+uncertainty, and a successful `target` run removes the OOS forecasts,
+signals, disagreement and uncertainty. Rerunning a forecast, family signal or
+ensemble for an OOS year first removes everything downstream of it for that
+year: a forecast or family signal removes the ensemble, the between-family
+disagreement and the within-family uncertainty of that year; an ensemble
+removes the between-family disagreement only, since the within-family
+uncertainty is computed from the family signals. The ensemble is the plain
+mean of the four family ranks, not re-ranked; the between-family disagreement
+is their population standard deviation, not re-ranked. All commands print
+aggregate information only.
 
 ## Local files
 
@@ -69,6 +73,7 @@ data/
     family_signals/               replica and family ranks, one file per family and OOS year
     ensemble_signals/             four family ranks and their mean, one file per OOS year
     between_family_disagreement/  ensemble signal and raw disagreement, one file per OOS year
+    within_family_uncertainty/    replica-rank SDs, their ranks and mean, one file per OOS year
   diagnostics/                    summary.json, universe_by_month.csv
 ```
 

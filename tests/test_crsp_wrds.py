@@ -111,6 +111,7 @@ def _derived_outputs(paths):
         paths.target / "target_2000.parquet",
         paths.ensemble_signals / "1985.json",
         paths.between_family_disagreement / "1985.json",
+        paths.within_family_uncertainty / "1985.json",
         paths.diagnostics / "summary.json",
         paths.diagnostics / "universe_by_month.csv",
     ]
