@@ -131,16 +131,17 @@ def test_incomplete_forecasts_are_rejected_and_leave_no_completion_marker(tmp_pa
     source = paths.oos_predictions / "elastic_net" / "2004.parquet"
     predictions = pd.read_parquet(source)
     predictions.iloc[1:].to_parquet(source, index=False)  # one stock-month loses a replica
-    stale = [paths.ensemble_signals / "2004.parquet", paths.ensemble_signals / "2004.json"]
-    unrelated = paths.ensemble_signals / "2005.json"
-    paths.ensemble_signals.mkdir(parents=True)
-    for path in stale + [unrelated]:
+    downstream = (paths.ensemble_signals, paths.between_family_disagreement)
+    stale = [d / f"2004.{suffix}" for d in downstream for suffix in ("parquet", "json")]
+    unrelated = [d / "2005.json" for d in downstream]
+    for path in stale + unrelated:
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("completed ensemble")
     assert main(argv) == 2
     assert "exactly replicas 0..4" in capsys.readouterr().err
     assert not (paths.family_signals / "elastic_net" / "2004.json").exists()  # not averaged over four
     assert not any(path.exists() for path in stale)  # stale as soon as the rerun starts, even though it failed
-    assert unrelated.read_text() == "completed ensemble"
+    assert all(path.read_text() == "completed ensemble" for path in unrelated)
 
     (paths.oos_predictions / "elastic_net" / "2004.json").unlink()
     predictions.to_parquet(source, index=False)
@@ -150,8 +151,9 @@ def test_incomplete_forecasts_are_rejected_and_leave_no_completion_marker(tmp_pa
 
 def test_regenerating_a_family_signal_removes_only_that_years_ensemble(tmp_path):
     paths, argv, _ = _setup(tmp_path)
-    matching = [paths.ensemble_signals / f"2004.{suffix}" for suffix in ("parquet", "json", "parquet.tmp", "json.tmp")]
-    unrelated = [paths.ensemble_signals / "2005.parquet", paths.ensemble_signals / "2005.json"]
+    downstream = (paths.ensemble_signals, paths.between_family_disagreement)
+    matching = [d / f"2004.{suffix}" for d in downstream for suffix in ("parquet", "json", "parquet.tmp", "json.tmp")]
+    unrelated = [d / f"2005.{suffix}" for d in downstream for suffix in ("parquet", "json")]
     for path in matching + unrelated:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("ensemble of earlier family signals")

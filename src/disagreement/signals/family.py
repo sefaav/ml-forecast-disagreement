@@ -95,10 +95,20 @@ def load_predictions(paths: DataPaths, family: str, oos_year: int, replicas: int
     return frame
 
 
-def remove_ensemble_signal(paths: DataPaths, oos_year: int) -> None:
-    """The ensemble of this OOS year, which a new signal of any of its families makes stale."""
+def _remove_year(directory: Path, oos_year: int) -> None:
     for name in (f"{oos_year}.json", f"{oos_year}.parquet", f"{oos_year}.json.tmp", f"{oos_year}.parquet.tmp"):
-        (paths.ensemble_signals / name).unlink(missing_ok=True)
+        (directory / name).unlink(missing_ok=True)
+
+
+def remove_between_family_disagreement(paths: DataPaths, oos_year: int) -> None:
+    """The raw between-family disagreement of this OOS year, which a new ensemble makes stale."""
+    _remove_year(paths.between_family_disagreement, oos_year)
+
+
+def remove_ensemble_signal(paths: DataPaths, oos_year: int) -> None:
+    """The ensemble of this OOS year and its disagreement, which a new signal of any family makes stale."""
+    _remove_year(paths.ensemble_signals, oos_year)
+    remove_between_family_disagreement(paths, oos_year)
 
 
 def _write(directory: Path, oos_year: int, frame: pd.DataFrame, metadata: dict) -> None:

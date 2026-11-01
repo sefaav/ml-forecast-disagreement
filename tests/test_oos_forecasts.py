@@ -233,9 +233,10 @@ def test_regenerating_a_forecast_removes_only_its_family_signal_and_ensemble(tmp
     paths, config_path, panel, target = _setup(tmp_path)
     suffixes = ("parquet", "json", "parquet.tmp", "json.tmp")
     matching = [paths.family_signals / "elastic_net" / f"2004.{suffix}" for suffix in suffixes]
-    matching += [paths.ensemble_signals / f"2004.{suffix}" for suffix in suffixes]
+    for directory in (paths.ensemble_signals, paths.between_family_disagreement):
+        matching += [directory / f"2004.{suffix}" for suffix in suffixes]
     unrelated = [paths.family_signals / "elastic_net" / "2005.json", paths.family_signals / "lightgbm" / "2004.json"]
-    unrelated += [paths.ensemble_signals / "2005.json"]
+    unrelated += [paths.ensemble_signals / "2005.json", paths.between_family_disagreement / "2005.json"]
     marker = paths.oos_predictions / "elastic_net" / "2004.json"
 
     def plant(paths_to_write):

@@ -350,3 +350,23 @@ than dropped. The output has one row per
 stock-month, with the four family ranks and $S_{i,t}$. Implementation:
 `disagreement.signals.ensemble` (`python -m disagreement.signals.ensemble`,
 output under `data/processed/ensemble_signals/`).
+
+## Between-family disagreement
+
+For each stock $i$ and OOS formation month $t$, the raw between-family
+disagreement is the dispersion of the four family ranks around the ensemble
+signal,
+
+$$D^{B,\mathrm{raw}}_{i,t} = \sqrt{\frac{1}{4}\sum_f \left(R^{f}_{i,t} - S_{i,t}\right)^2},$$
+
+the population standard deviation (`ddof = 0`): the four model families are
+the complete fixed set of the design, not a sample of families. Since every
+family rank lies in $[0, 1]$, $D^{B,\mathrm{raw}}_{i,t}$ lies in $[0, 0.5]$;
+it is 0 when the four families agree and 0.5 when two rank the stock at 0 and
+two at 1. It is not re-ranked and not yet conditioned on the ensemble signal,
+and no target or return is used. The ensemble input is checked first: twelve
+OOS months, ranks in $[0, 1]$, and a saved $S_{i,t}$ equal to the mean of its
+four family ranks. The output has one row per stock-month, with $S_{i,t}$ and
+$D^{B,\mathrm{raw}}_{i,t}$. Implementation: `disagreement.signals.between`
+(`python -m disagreement.signals.between`, output under
+`data/processed/between_family_disagreement/`).

@@ -29,7 +29,9 @@ import pandas as pd
 from disagreement.data.config import DEFAULT_CONFIG, DEFAULT_DATA_DIR, DataPaths
 from disagreement.data.validation import DataValidationError, require_unique_keys
 from disagreement.models.selection import FAMILIES
-from disagreement.signals.family import SIGNAL_COLUMNS, SIGNAL_KEY, configured_replicas
+from disagreement.signals.family import (
+    SIGNAL_COLUMNS, SIGNAL_KEY, configured_replicas, remove_between_family_disagreement,
+)
 from disagreement.walkforward.calendar import baseline_episodes, month_range
 
 ENSEMBLE_COLUMNS = (
@@ -129,6 +131,7 @@ def run_ensemble_signals(
     summaries = []
     for oos_year in baseline_years:
         (paths.ensemble_signals / f"{oos_year}.json").unlink(missing_ok=True)  # not complete until rewritten
+        remove_between_family_disagreement(paths, oos_year)
         ranks = {family: load_family_ranks(paths, family, oos_year, replicas) for family in FAMILIES}
         signals = ensemble_signals(ranks)
         expected, observed = month_range(oos_year * 100 + 1, oos_year * 100 + 12), set(signals["yyyymm"].tolist())

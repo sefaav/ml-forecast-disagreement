@@ -101,11 +101,12 @@ def _concat(files):
 
 def test_build_end_to_end_on_synthetic_files(tmp_path, capsys):
     paths, argv = _setup(tmp_path)
-    for directory in (paths.oos_predictions / "elastic_net", paths.family_signals / "elastic_net", paths.ensemble_signals):
+    downstream = (paths.oos_predictions, paths.family_signals, paths.ensemble_signals)
+    downstream += (paths.between_family_disagreement,)
+    for directory in (downstream[0] / "elastic_net", downstream[1] / "elastic_net", *downstream[2:]):
         directory.mkdir(parents=True)
         (directory / "1985.json").write_text("from an earlier build")
     assert main(argv) == 0
-    downstream = (paths.oos_predictions, paths.family_signals, paths.ensemble_signals)
     assert not any(d.exists() for d in downstream)  # stale downstream outputs
     summary = json.loads((paths.diagnostics / "summary.json").read_text())
     captured = capsys.readouterr()

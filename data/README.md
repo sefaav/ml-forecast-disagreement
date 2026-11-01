@@ -31,6 +31,7 @@ python -m venv .venv
 .venv\Scripts\python -m disagreement.walkforward.forecast [--family F] [--year Y]   # OOS replica forecasts
 .venv\Scripts\python -m disagreement.signals.family [--family F] [--year Y]        # replica and family ranks
 .venv\Scripts\python -m disagreement.signals.ensemble [--year Y]                   # mean of the four family ranks
+.venv\Scripts\python -m disagreement.signals.between [--year Y]                    # SD of the four family ranks
 .venv\Scripts\python -m pytest                           # synthetic tests
 ```
 
@@ -38,33 +39,37 @@ python -m venv .venv
 `WRDS_USERNAME`, otherwise `wrds` prompts. It downloads the whole table into
 a temporary directory, which replaces the previous extract only after the
 extraction succeeds; the universe, panel, target, OOS forecasts, family and
-ensemble signals and their diagnostics are then removed, so `build` must be
-run again. `build` checks the extract against `_manifest.json` and the OSAP
-archive against the pinned release before touching earlier outputs. `target`
-reads the universe of the last successful build and the CRSP extract; `build`
-removes it together with the universe, panel, OOS forecasts, family and
-ensemble signals, and a successful `target` run removes the OOS forecasts,
-family and ensemble signals. Rerunning a forecast or family signal for a
-family and OOS year removes its downstream signals for that year, including
-the ensemble of that year. The ensemble is the plain mean of the four family
-ranks, not re-ranked. All commands print aggregate information only.
+ensemble signals, between-family disagreement and their diagnostics are then
+removed, so `build` must be run again. `build` checks the extract against
+`_manifest.json` and the OSAP archive against the pinned release before
+touching earlier outputs. `target` reads the universe of the last successful
+build and the CRSP extract; `build` removes it together with the universe,
+panel, OOS forecasts, signals and disagreement, and a successful `target` run
+removes the OOS forecasts, signals and disagreement. Rerunning a forecast,
+family signal or ensemble for an OOS year first removes everything downstream
+of it for that year, including the ensemble and the between-family
+disagreement of that year. The ensemble is the plain mean of the four family
+ranks, not re-ranked; the between-family disagreement is their population
+standard deviation, not re-ranked. All commands print aggregate information
+only.
 
 ## Local files
 
 ```
 data/
   raw/
-    crsp/             CRSP extract, one file per year, and _manifest.json
-    osap/             OSAP archive
-  interim/            temporary files, removed by build
+    crsp/                         CRSP extract, one file per year, and _manifest.json
+    osap/                         OSAP archive
+  interim/                        temporary files, removed by build
   processed/
-    universe/         U_t members, one file per year
-    panel/            U_t x 212 predictors, one file per year
-    target/           ret_next and target_rank, one file per year
-    oos_predictions/  raw replica forecasts, one file per family and OOS year
-    family_signals/   replica and family ranks, one file per family and OOS year
-    ensemble_signals/ four family ranks and their mean, one file per OOS year
-  diagnostics/        summary.json, universe_by_month.csv
+    universe/                     U_t members, one file per year
+    panel/                        U_t x 212 predictors, one file per year
+    target/                       ret_next and target_rank, one file per year
+    oos_predictions/              raw replica forecasts, one file per family and OOS year
+    family_signals/               replica and family ranks, one file per family and OOS year
+    ensemble_signals/             four family ranks and their mean, one file per OOS year
+    between_family_disagreement/  ensemble signal and raw disagreement, one file per OOS year
+  diagnostics/                    summary.json, universe_by_month.csv
 ```
 
 ## Successful run
