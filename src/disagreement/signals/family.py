@@ -100,18 +100,25 @@ def _remove_year(directory: Path, oos_year: int) -> None:
         (directory / name).unlink(missing_ok=True)
 
 
+def remove_conditional_disagreement(paths: DataPaths, oos_year: int) -> None:
+    """The conditional disagreement of this OOS year, stale once any of its three sources changes."""
+    _remove_year(paths.conditional_disagreement, oos_year)
+
+
 def remove_between_family_disagreement(paths: DataPaths, oos_year: int) -> None:
-    """The raw between-family disagreement of this OOS year, which a new ensemble makes stale."""
+    """The raw between-family disagreement of this OOS year and what is built from it."""
     _remove_year(paths.between_family_disagreement, oos_year)
+    remove_conditional_disagreement(paths, oos_year)
 
 
 def remove_within_family_uncertainty(paths: DataPaths, oos_year: int) -> None:
-    """The within-family uncertainty of this OOS year, which a new signal of any family makes stale."""
+    """The within-family uncertainty of this OOS year and what is built from it."""
     _remove_year(paths.within_family_uncertainty, oos_year)
+    remove_conditional_disagreement(paths, oos_year)
 
 
 def remove_ensemble_signal(paths: DataPaths, oos_year: int) -> None:
-    """The ensemble of this OOS year and its disagreement, which a new signal of any family makes stale."""
+    """The ensemble of this OOS year and what is built from it, stale once a signal of any family changes."""
     _remove_year(paths.ensemble_signals, oos_year)
     remove_between_family_disagreement(paths, oos_year)
 

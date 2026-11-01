@@ -93,6 +93,11 @@ def test_invalid_ensemble_input_leaves_no_completion_marker(tmp_path, capsys):
     marker = paths.between_family_disagreement / "2004.json"
     source = paths.ensemble_signals / "2004.parquet"
     ensemble = pd.read_parquet(source)
+    conditional = [paths.conditional_disagreement / f"2004.{suffix}" for suffix in ("parquet", "json", "json.tmp")]
+    unrelated = paths.conditional_disagreement / "2005.json"
+    paths.conditional_disagreement.mkdir(parents=True)
+    for path in conditional + [unrelated]:
+        path.write_text("conditional disagreement of an earlier run")
 
     changed = ensemble.copy()
     changed.loc[changed.index[0], "ensemble_signal"] = 0.5 if changed["ensemble_signal"].iloc[0] != 0.5 else 0.25
@@ -100,6 +105,8 @@ def test_invalid_ensemble_input_leaves_no_completion_marker(tmp_path, capsys):
     assert main(argv) == 2
     assert "ensemble_signal is not the mean of the family ranks in 1 rows" in capsys.readouterr().err
     assert not marker.exists()
+    assert not any(path.exists() for path in conditional)  # stale as soon as the rerun starts
+    assert unrelated.read_text() == "conditional disagreement of an earlier run"
 
     ensemble[ensemble["yyyymm"] != 200406].to_parquet(source, index=False)  # 11 months
     assert main(argv) == 2

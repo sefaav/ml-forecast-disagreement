@@ -234,6 +234,7 @@ def test_regenerating_a_forecast_removes_only_its_family_signal_and_ensemble(tmp
     suffixes = ("parquet", "json", "parquet.tmp", "json.tmp")
     matching = [paths.family_signals / "elastic_net" / f"2004.{suffix}" for suffix in suffixes]
     yearly = (paths.ensemble_signals, paths.between_family_disagreement, paths.within_family_uncertainty)
+    yearly += (paths.conditional_disagreement,)
     for directory in yearly:
         matching += [directory / f"2004.{suffix}" for suffix in suffixes]
     unrelated = [paths.family_signals / "elastic_net" / "2005.json", paths.family_signals / "lightgbm" / "2004.json"]

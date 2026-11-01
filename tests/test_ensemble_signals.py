@@ -128,7 +128,8 @@ def test_mismatched_or_incomplete_family_signals_leave_no_completion_marker(tmp_
     signals = pd.read_parquet(source)
 
     disagreement = paths.between_family_disagreement
-    stale = [disagreement / f"2004.{suffix}" for suffix in ("parquet", "json", "parquet.tmp", "json.tmp")]
+    suffixes = ("parquet", "json", "parquet.tmp", "json.tmp")
+    stale = [d / f"2004.{suffix}" for d in (disagreement, paths.conditional_disagreement) for suffix in suffixes]
     unrelated = disagreement / "2005.json"
     within = paths.within_family_uncertainty / "2004.json"  # depends on the family signals only
     for path in stale + [unrelated, within]:

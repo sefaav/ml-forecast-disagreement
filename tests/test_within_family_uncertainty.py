@@ -134,11 +134,18 @@ def test_invalid_family_signals_leave_no_completion_marker(tmp_path, capsys):
     marker = paths.within_family_uncertainty / "2004.json"
     lightgbm, mlp = (paths.family_signals / f / "2004.parquet" for f in ("lightgbm", "mlp"))
     lightgbm_signals, mlp_signals = pd.read_parquet(lightgbm), pd.read_parquet(mlp)
+    conditional = [paths.conditional_disagreement / f"2004.{suffix}" for suffix in ("parquet", "json", "parquet.tmp")]
+    unrelated = paths.conditional_disagreement / "2005.json"
+    paths.conditional_disagreement.mkdir(parents=True)
+    for path in conditional + [unrelated]:
+        path.write_text("conditional disagreement of an earlier run")
 
     lightgbm_signals.iloc[1:].to_parquet(lightgbm, index=False)  # one stock-month loses a replica
     assert main(argv) == 2
     assert "lightgbm 2004 family signals: every stock-month needs exactly replicas 0..4" in capsys.readouterr().err
     assert not marker.exists()
+    assert not any(path.exists() for path in conditional)  # stale as soon as the rerun starts
+    assert unrelated.read_text() == "conditional disagreement of an earlier run"
     lightgbm_signals.to_parquet(lightgbm, index=False)
 
     permno, month = keys[3]

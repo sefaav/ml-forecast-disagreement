@@ -188,7 +188,7 @@ def remove_derived_outputs(paths: DataPaths) -> None:
         stale.unlink(missing_ok=True)
     derived = (
         paths.universe, paths.panel, paths.target, paths.oos_predictions, paths.family_signals, paths.ensemble_signals,
-        paths.between_family_disagreement, paths.within_family_uncertainty,
+        paths.between_family_disagreement, paths.within_family_uncertainty, paths.conditional_disagreement,
     )
     for directory in derived:
         if directory.exists():

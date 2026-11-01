@@ -29,6 +29,7 @@ import pandas as pd
 from disagreement.data.config import DEFAULT_CONFIG, DEFAULT_DATA_DIR, DataPaths
 from disagreement.data.validation import DataValidationError, require_unique_keys
 from disagreement.signals.ensemble import ENSEMBLE_COLUMNS
+from disagreement.signals.family import remove_conditional_disagreement
 from disagreement.walkforward.calendar import baseline_episodes, month_range
 
 OUTPUT_COLUMNS = ("permno", "yyyymm", "ensemble_signal", "between_family_disagreement_raw")
@@ -108,6 +109,7 @@ def run_between_family_disagreement(
     summaries = []
     for oos_year in baseline_years:
         (paths.between_family_disagreement / f"{oos_year}.json").unlink(missing_ok=True)  # not complete until rewritten
+        remove_conditional_disagreement(paths, oos_year)
         disagreement = between_family_disagreement(load_ensemble(paths, oos_year))
         source = paths.ensemble_signals / f"{oos_year}.parquet"
         metadata = {

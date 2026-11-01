@@ -402,3 +402,36 @@ stock-month, with the four $D^{W,f}_{i,t}$, the four $R^{W,f}_{i,t}$ and
 $W^{\mathrm{raw}}_{i,t}$. Implementation: `disagreement.signals.within`
 (`python -m disagreement.signals.within`, output under
 `data/processed/within_family_uncertainty/`).
+
+## Conditional disagreement
+
+Disagreement and uncertainty are compared only among stocks with similar
+ensemble signals. Within each OOS formation month separately, stocks are
+sorted into $B = 20$ signal bins by the ensemble signal alone. With
+$r_{i,t}$ the average rank of $S_{i,t}$ among the month's $n_t$ stocks,
+
+$$\mathit{bin}_{i,t} = 1 + \left\lfloor 20\,\frac{r_{i,t} - 1}{n_t} \right\rfloor \in \{1, \dots, 20\},$$
+
+from 1 for the lowest signals to 20 for the highest. Stocks with exactly the
+same ensemble signal share their average rank and therefore their bin: ties
+are never split by row order, identifier or randomisation, so the bins are
+approximately rather than exactly equal-frequency when signals tie, and as
+even as possible when they do not. Bins never pool months or use the
+individual family ranks.
+
+Inside each (month, signal bin) group, the raw between-family disagreement
+$D^{B,\mathrm{raw}}_{i,t}$ is ranked across stocks with average ranks for
+ties and mapped to $[0, 1]$,
+
+$$CD^{B}_{i,t} = \frac{\operatorname{rank}(D^{B,\mathrm{raw}}_{i,t}) - 1}{n_{b,t} - 1},$$
+
+with 0.5 for a single stock or a constant group. The raw within-family
+uncertainty $W^{\mathrm{raw}}_{i,t}$ is ranked separately in exactly the same
+groups and in the same way, giving $CW_{i,t}$. Both conditional variables
+lie in $[0, 1]$; they are the primary disagreement and uncertainty measures
+of the empirical specifications. No target or return is used, and no
+regression or diagnostic is run at this stage. The output has one row per
+stock-month, with $S_{i,t}$, the signal bin, both raw measures and both
+conditional measures. Implementation: `disagreement.signals.conditional`
+(`python -m disagreement.signals.conditional`, output under
+`data/processed/conditional_disagreement/`).
