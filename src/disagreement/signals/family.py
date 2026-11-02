@@ -21,6 +21,7 @@ import argparse
 import hashlib
 import json
 import os
+import shutil
 import sys
 from collections.abc import Iterable, Sequence
 from pathlib import Path
@@ -100,9 +101,16 @@ def _remove_year(directory: Path, oos_year: int) -> None:
         (directory / name).unlink(missing_ok=True)
 
 
+def remove_mechanical_bias_diagnostics(paths: DataPaths) -> None:
+    """The aggregate mechanical-bias diagnostics, stale once any conditional-disagreement year changes."""
+    if paths.mechanical_bias_diagnostics.exists():
+        shutil.rmtree(paths.mechanical_bias_diagnostics)
+
+
 def remove_conditional_disagreement(paths: DataPaths, oos_year: int) -> None:
     """The conditional disagreement of this OOS year, stale once any of its three sources changes."""
     _remove_year(paths.conditional_disagreement, oos_year)
+    remove_mechanical_bias_diagnostics(paths)
 
 
 def remove_between_family_disagreement(paths: DataPaths, oos_year: int) -> None:

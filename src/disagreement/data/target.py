@@ -120,6 +120,7 @@ def build_targets(paths: DataPaths, cfg: DataConfig) -> dict:
         paths.between_family_disagreement,
         paths.within_family_uncertainty,
         paths.conditional_disagreement,
+        paths.mechanical_bias_diagnostics,
     )
     for stale in (paths.oos_predictions, *signals):  # from the replaced targets
         if stale.exists():

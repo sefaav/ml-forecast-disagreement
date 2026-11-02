@@ -96,7 +96,9 @@ def test_invalid_ensemble_input_leaves_no_completion_marker(tmp_path, capsys):
     conditional = [paths.conditional_disagreement / f"2004.{suffix}" for suffix in ("parquet", "json", "json.tmp")]
     unrelated = paths.conditional_disagreement / "2005.json"
     paths.conditional_disagreement.mkdir(parents=True)
-    for path in conditional + [unrelated]:
+    diagnostics = [paths.mechanical_bias_diagnostics / name for name in ("summary.json", "monthly_correlations.csv")]
+    paths.mechanical_bias_diagnostics.mkdir(parents=True)
+    for path in conditional + [unrelated] + diagnostics:
         path.write_text("conditional disagreement of an earlier run")
 
     changed = ensemble.copy()
@@ -107,6 +109,7 @@ def test_invalid_ensemble_input_leaves_no_completion_marker(tmp_path, capsys):
     assert not marker.exists()
     assert not any(path.exists() for path in conditional)  # stale as soon as the rerun starts
     assert unrelated.read_text() == "conditional disagreement of an earlier run"
+    assert not paths.mechanical_bias_diagnostics.exists()  # aggregate over all years: stale as a whole
 
     ensemble[ensemble["yyyymm"] != 200406].to_parquet(source, index=False)  # 11 months
     assert main(argv) == 2

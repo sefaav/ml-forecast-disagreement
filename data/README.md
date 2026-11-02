@@ -34,6 +34,7 @@ python -m venv .venv
 .venv\Scripts\python -m disagreement.signals.between [--year Y]                    # SD of the four family ranks
 .venv\Scripts\python -m disagreement.signals.within [--year Y]                     # replica-rank SD, ranked by family
 .venv\Scripts\python -m disagreement.signals.conditional [--year Y]                # both ranked within 20 signal bins
+.venv\Scripts\python -m disagreement.diagnostics.mechanical_bias                   # descriptive, all OOS years
 .venv\Scripts\python -m pytest                           # synthetic tests
 ```
 
@@ -55,7 +56,10 @@ disagreement, the within-family uncertainty and the conditional disagreement
 of that year; an ensemble removes the between-family and conditional
 disagreement, since the within-family uncertainty is computed from the family
 signals; the between-family disagreement and the within-family uncertainty
-each remove the conditional disagreement. The ensemble is the plain mean of
+each remove the conditional disagreement. Removing or rerunning any
+conditional-disagreement year removes the whole `diagnostics/mechanical_bias/`
+directory, which describes all OOS years at once; `build`, `crsp-extract` and
+a successful `target` run remove it too. The ensemble is the plain mean of
 the four family ranks, not re-ranked; the between-family disagreement is
 their population standard deviation, not re-ranked. All commands print
 aggregate information only.
@@ -79,6 +83,7 @@ data/
     within_family_uncertainty/    replica-rank SDs, their ranks and mean, one file per OOS year
     conditional_disagreement/     signal bins and conditional ranks, one file per OOS year
   diagnostics/                    summary.json, universe_by_month.csv
+    mechanical_bias/              monthly and signal-bin correlations, summary.json
 ```
 
 ## Successful run

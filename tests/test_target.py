@@ -136,6 +136,7 @@ def test_failed_target_build_keeps_the_previous_target(tmp_path):
         paths.between_family_disagreement / "2001.json",
         paths.within_family_uncertainty / "2001.json",
         paths.conditional_disagreement / "2001.json",
+        paths.mechanical_bias_diagnostics / "summary.json",
     ]
     for output in downstream:  # made from these targets
         output.parent.mkdir(parents=True)
@@ -156,3 +157,4 @@ def test_failed_target_build_keeps_the_previous_target(tmp_path):
     build_targets(paths, cfg)  # a successful build replaces it
     assert pd.read_parquet(paths.target / "target_2000.parquet")["ret_next"].iloc[2] == 0.09
     assert sorted(d.name for d in paths.target.parent.iterdir()) == ["target", "universe"]  # stale forecasts removed
+    assert not paths.mechanical_bias_diagnostics.exists()

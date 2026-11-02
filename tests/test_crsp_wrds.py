@@ -113,6 +113,7 @@ def _derived_outputs(paths):
         paths.between_family_disagreement / "1985.json",
         paths.within_family_uncertainty / "1985.json",
         paths.conditional_disagreement / "1985.json",
+        paths.mechanical_bias_diagnostics / "summary.json",
         paths.diagnostics / "summary.json",
         paths.diagnostics / "universe_by_month.csv",
     ]

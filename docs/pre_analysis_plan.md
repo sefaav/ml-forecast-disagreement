@@ -435,3 +435,35 @@ stock-month, with $S_{i,t}$, the signal bin, both raw measures and both
 conditional measures. Implementation: `disagreement.signals.conditional`
 (`python -m disagreement.signals.conditional`, output under
 `data/processed/conditional_disagreement/`).
+
+## Mechanical-bias diagnostics
+
+Because the four family ranks lie in $[0, 1]$ and $S_{i,t}$ is their mean,
+their dispersion is mechanically limited when $S_{i,t}$ is close to 0 or 1.
+A descriptive diagnostic checks how far the signal-bin conditioning removes
+this relation. For diagnosis only, the ensemble signal is centred,
+$S^c_{i,t} = 2(S_{i,t} - 0.5)$, and its extremity is $|S^c_{i,t}|$; neither
+is stored with the signals.
+
+In every OOS formation month separately, four Pearson correlations are
+computed over the month's stocks: $D^{B,\mathrm{raw}}$ with $S$,
+$D^{B,\mathrm{raw}}$ with $|S^c|$, $CD^B$ with $S$, and $CD^B$ with $|S^c|$.
+Each monthly series is summarised with equal month weights (number of finite
+months, mean, median, mean absolute value, 5th and 95th percentiles). The
+same four correlations are computed inside every (month, signal bin), and
+the bins are profiled with equal month weights: the mean over months of the
+monthly bin means of $S$, $|S^c|$, $D^{B,\mathrm{raw}}$ and $CD^B$, and the
+mean, median and mean absolute value of each within-bin correlation. Bins 1
+and 20, where the mechanical bound binds most, are the ones to inspect, but
+every bin is computed in the same way. A correlation with fewer than two
+stocks or a constant variable is undefined and left missing, never set to
+0; summaries use the finite correlations only.
+
+Only the conditional-disagreement files are read, and their signal bins are
+checked against the ensemble signal; no target or return is used. There is
+no significance test, threshold or pass/fail rule, and the diagnostic does
+not change the design: any methodological decision it prompts is taken
+separately and explicitly. Implementation:
+`disagreement.diagnostics.mechanical_bias`
+(`python -m disagreement.diagnostics.mechanical_bias`, over the complete
+baseline OOS sample, output under `data/diagnostics/mechanical_bias/`).

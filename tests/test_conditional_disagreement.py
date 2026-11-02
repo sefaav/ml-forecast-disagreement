@@ -168,8 +168,11 @@ def test_invalid_sources_leave_no_completion_marker(tmp_path, capsys):
         assert message in capsys.readouterr().err
         assert not marker.exists()
 
+    paths.mechanical_bias_diagnostics.mkdir(parents=True)
+    (paths.mechanical_bias_diagnostics / "summary.json").write_text("diagnostic of an earlier run")
     disagreement.iloc[1:].to_parquet(disagreement_path, index=False)  # one stock-month missing
     rejected("2004 between-family disagreement covers different stock-months than the ensemble: 1 missing, 0 extra")
+    assert not paths.mechanical_bias_diagnostics.exists()  # stale as soon as a conditional year is rerun
 
     changed = disagreement.copy()
     changed.loc[0, "ensemble_signal"] = 0.5 if changed.loc[0, "ensemble_signal"] != 0.5 else 0.25
