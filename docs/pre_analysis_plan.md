@@ -823,4 +823,35 @@ Inputs: `data/processed/universe/` (`mktcap`), `data/processed/panel/`
 (`RealizedVol`, `Illiquidity`), `data/processed/conditional_disagreement/`
 ($S$, bins, $CD^B$, $CW$). Rank convention: `unit_rank` in
 `disagreement.signals.family`. Upstream reference: OSAP tag `v2.0.0` as
-above. The controls are not yet implemented.
+above.
+
+Module: `disagreement.controls.h2`, run with
+`python -m disagreement.controls.h2 [--year Y]` (one OOS year, repeatable;
+default: all baseline OOS years). It reads the universe, the panel and the
+conditional disagreement of each OOS year, checks that the three cover
+exactly the same stock-months with the same `mktcap`, and writes
+`data/processed/h2_controls/<year>.parquet` with one row per member of
+$U_t$, sorted by (`yyyymm`, `permno`), and the columns
+
+| Column | Content |
+|---|---|
+| `permno`, `yyyymm` | the universe's stock-month keys |
+| `size`, `realized_volatility`, `illiquidity` | SIZE, RVOL, ILLIQ as defined above; missing source: missing |
+| `size_rank`, `realized_volatility_rank`, `illiquidity_rank` | $X^c$ in $[-1, 1]$; missing value: missing |
+| `complete_case` | all three ranks present |
+| `centered_signal` | $S^c = 2(S - 0.5)$ from the saved ensemble signal |
+| `signal_x_<control>_rank`, three columns | $S^c \times X^c$; missing rank: missing |
+
+The ranks are computed on the full universe of the month, before the
+complete-case flag is formed, so that an H2 estimation restricted to
+`complete_case` keeps the full-universe ranks. $S$, the signal bins, $CD^B$
+and $CW$ are read for the signal only and never recomputed. A JSON sidecar
+per year, written last as the completion marker, records aggregate
+coverage, the frozen transformation definition and its SHA-256, and the
+SHA-256 of the three input files and of the output file itself;
+`load_h2_controls` in the same module, the entry point for any downstream
+use, rejects a year whose inputs, output file or definition have changed
+since it was built, with no option to skip these checks.
+Rerunning the conditional disagreement of a year, a new target build, a new
+`build` or a new CRSP extract removes the controls as well. Tests on
+synthetic data: `tests/test_h2_controls.py`.

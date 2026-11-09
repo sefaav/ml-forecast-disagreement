@@ -183,13 +183,13 @@ def build_panel_files(paths: DataPaths, cfg: DataConfig, osap_path: Path, signal
 
 
 def remove_derived_outputs(paths: DataPaths) -> None:
-    """Universe, panel, target, OOS forecasts, signals, disagreement, uncertainty and diagnostics, all from CRSP."""
+    """Universe, panel, target, OOS forecasts, signals, disagreement, uncertainty, controls and diagnostics."""
     for stale in (paths.diagnostics / "summary.json", paths.diagnostics / "universe_by_month.csv"):
         stale.unlink(missing_ok=True)
     derived = (
         paths.universe, paths.panel, paths.target, paths.oos_predictions, paths.family_signals, paths.ensemble_signals,
         paths.between_family_disagreement, paths.within_family_uncertainty, paths.conditional_disagreement,
-        paths.mechanical_bias_diagnostics,
+        paths.h2_controls, paths.mechanical_bias_diagnostics,
     )
     for directory in derived:
         if directory.exists():

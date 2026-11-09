@@ -186,3 +186,19 @@ def test_invalid_sources_leave_no_completion_marker(tmp_path, capsys):
     uncertainty.to_parquet(uncertainty_path, index=False)
     (paths.within_family_uncertainty / "2004.json").unlink()
     rejected("no complete within-family uncertainty")
+
+
+def test_regenerating_a_year_removes_only_that_years_h2_controls(tmp_path):
+    paths, argv = _setup(tmp_path)
+    assert main(argv) == 0  # no H2 controls exist yet: the invalidation must be a no-op
+    assert not paths.h2_controls.exists()
+
+    suffixes = ("parquet", "json", "parquet.tmp", "json.tmp")
+    stale = [paths.h2_controls / f"2004.{suffix}" for suffix in suffixes]
+    unrelated = [paths.h2_controls / f"2005.{suffix}" for suffix in ("parquet", "json")]
+    for path in stale + unrelated:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("controls built from an earlier conditional disagreement")
+    assert main(argv) == 0  # direct regeneration of the 2004 conditional disagreement
+    assert not any(path.exists() for path in stale)  # files and completion marker of 2004
+    assert all(path.read_text() == "controls built from an earlier conditional disagreement" for path in unrelated)

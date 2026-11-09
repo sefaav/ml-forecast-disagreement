@@ -34,6 +34,7 @@ python -m venv .venv
 .venv\Scripts\python -m disagreement.signals.between [--year Y]                    # SD of the four family ranks
 .venv\Scripts\python -m disagreement.signals.within [--year Y]                     # replica-rank SD, ranked by family
 .venv\Scripts\python -m disagreement.signals.conditional [--year Y]                # both ranked within 20 signal bins
+.venv\Scripts\python -m disagreement.controls.h2 [--year Y]                        # H2 controls as monthly centred ranks
 .venv\Scripts\python -m disagreement.diagnostics.mechanical_bias                   # descriptive, all OOS years
 .venv\Scripts\python -m pytest                           # synthetic tests
 ```
@@ -57,9 +58,12 @@ of that year; an ensemble removes the between-family and conditional
 disagreement, since the within-family uncertainty is computed from the family
 signals; the between-family disagreement and the within-family uncertainty
 each remove the conditional disagreement. Removing or rerunning any
-conditional-disagreement year removes the whole `diagnostics/mechanical_bias/`
-directory, which describes all OOS years at once; `build`, `crsp-extract` and
-a successful `target` run remove it too. The ensemble is the plain mean of
+conditional-disagreement year removes that year's H2 controls and the whole
+`diagnostics/mechanical_bias/` directory, which describes all OOS years at
+once; `build`, `crsp-extract` and a successful `target` run remove both too.
+The H2 controls also record the SHA-256 of their three input files and of
+their own output file; their loader rejects a year whose inputs or output
+changed after it was built. The ensemble is the plain mean of
 the four family ranks, not re-ranked; the between-family disagreement is
 their population standard deviation, not re-ranked. All commands print
 aggregate information only.
@@ -82,6 +86,7 @@ data/
     between_family_disagreement/  ensemble signal and raw disagreement, one file per OOS year
     within_family_uncertainty/    replica-rank SDs, their ranks and mean, one file per OOS year
     conditional_disagreement/     signal bins and conditional ranks, one file per OOS year
+    h2_controls/                  size, volatility and illiquidity ranks, one file per OOS year
   diagnostics/                    summary.json, universe_by_month.csv
     mechanical_bias/              monthly and signal-bin correlations, summary.json
 ```

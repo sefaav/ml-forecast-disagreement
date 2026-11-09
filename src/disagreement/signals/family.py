@@ -107,10 +107,16 @@ def remove_mechanical_bias_diagnostics(paths: DataPaths) -> None:
         shutil.rmtree(paths.mechanical_bias_diagnostics)
 
 
+def remove_h2_controls(paths: DataPaths, oos_year: int) -> None:
+    """The H2 controls of this OOS year, stale once the universe, the panel or the conditional disagreement changes."""
+    _remove_year(paths.h2_controls, oos_year)
+
+
 def remove_conditional_disagreement(paths: DataPaths, oos_year: int) -> None:
-    """The conditional disagreement of this OOS year, stale once any of its three sources changes."""
+    """The conditional disagreement of this OOS year and what is built from it, stale once a source changes."""
     _remove_year(paths.conditional_disagreement, oos_year)
     remove_mechanical_bias_diagnostics(paths)
+    remove_h2_controls(paths, oos_year)
 
 
 def remove_between_family_disagreement(paths: DataPaths, oos_year: int) -> None:

@@ -34,7 +34,7 @@ from disagreement.data.config import DEFAULT_CONFIG, DEFAULT_DATA_DIR, DataPaths
 from disagreement.data.validation import KEY, DataValidationError, require_unique_keys
 from disagreement.signals import between, within
 from disagreement.signals.between import load_ensemble
-from disagreement.signals.family import remove_mechanical_bias_diagnostics, unit_rank
+from disagreement.signals.family import remove_h2_controls, remove_mechanical_bias_diagnostics, unit_rank
 from disagreement.walkforward.calendar import baseline_episodes, month_range
 
 SIGNAL_BINS = 20  # the primary specification
@@ -162,6 +162,7 @@ def run_conditional_disagreement(
     for oos_year in baseline_years:
         (paths.conditional_disagreement / f"{oos_year}.json").unlink(missing_ok=True)  # not complete until rewritten
         remove_mechanical_bias_diagnostics(paths)
+        remove_h2_controls(paths, oos_year)  # built from this year's conditional disagreement
         out = conditional_disagreement(load_sources(paths, oos_year), SIGNAL_BINS)
         metadata = {
             "oos_year": oos_year,

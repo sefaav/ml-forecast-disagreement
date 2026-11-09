@@ -66,6 +66,10 @@ class DataPaths:
         return self.root / "processed" / "conditional_disagreement"
 
     @property
+    def h2_controls(self) -> Path:
+        return self.root / "processed" / "h2_controls"
+
+    @property
     def diagnostics(self) -> Path:
         return self.root / "diagnostics"
 
