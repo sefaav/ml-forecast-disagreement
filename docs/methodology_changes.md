@@ -114,3 +114,58 @@ $$
 
 with the global controls $|S^c|$ and $S^c \times |S^c|$, the same expected
 sign and the same two-sided inference.
+
+## 2026-11-09 — H2 control definitions
+
+**Status.** Pre-results amendment, taken after the H1 amendment of the same
+date. It closes the H2 control definitions that the previous entry listed as
+open. The return variable, the Fama–MacBeth inference implementation, the
+HAC/Newey–West lag, the policy for observations without an outcome and the
+H1/H2 decision rules remain open; the pre-analysis plan is not frozen.
+
+**Evidence used.** The repository's data layer and its coverage diagnostics
+(the CRSP extract holds fifteen monthly fields and no volume or daily data;
+the panel holds the OSAP predictors `RealizedVol`, `Illiquidity` and `Size`
+and the universe holds `mktcap`; monthly coverage of these columns among
+$U_t$ over the 480 OOS months), the OSAP code at tag `v2.0.0` of
+`OpenSourceAP/CrossSection` (commit `b4e911e6…`), CRSP and WRDS
+documentation on NASDAQ volume, and the literature on Amihud's measure and
+realized volatility. No return, target or H1–H4 result was inspected.
+
+**Decision.** The H2 controls are: size = $\ln(\texttt{mktcap})$ from the
+formation-month universe; realized volatility = the sign-reversed OSAP
+`RealizedVol` (standard deviation of daily excess returns in month $t$, at
+least 15 observations); illiquidity = the OSAP `Illiquidity` (mean of the
+twelve most recent available monthly Amihud means through month $t$). Each
+is ranked separately within $U_t$ among its finite values, scaled to
+$[-1, 1]$ with average ranks for ties, and enters specification C as a level
+term and interacted with $S^c$. Complete-case estimation without imputation;
+$U_t$, $S$, $CD^B$, $CW$ and the bins unchanged; specification C re-estimated
+on the H2 sample for comparison. Full specification:
+[pre_analysis_plan.md](pre_analysis_plan.md), "H2 control characteristics".
+
+**Why existing predictors rather than a daily CRSP reconstruction.** The
+alternative was to extract the CRSP daily file (`stkdlysecuritydata`), and to
+build month-$t$ volatility and an Amihud measure with chosen minimum-day
+rules and the Gao–Ritter NASDAQ volume adjustment. It was not chosen because
+it requires a new licensed extraction and a second licensed-data pipeline,
+whereas the existing predictors are already in the panel, are dated at month
+$t$ without lag, are the characteristics the four model families actually
+received, and match the intended definitions closely (volatility of daily
+returns in month $t$ with a 15-observation floor; a twelve-month Amihud
+average). The simpler design was preferred.
+
+**Limitations accepted.** Unadjusted NASDAQ volume before 2004 understates
+the Amihud ratio of NASDAQ stocks relative to other stocks in the same
+month, and monthly ranking does not necessarily remove this; the twelve
+`Illiquidity` observations are available months, not necessarily consecutive
+calendar months; missing `Illiquidity` values exclude mostly recently listed
+stocks (coverage among $U_t$ averages 0.954 over 1985–2024, with a minimum
+of 0.863); `RealizedVol` keeps a stock-month with at least 15 excess-return
+observations even if fewer residuals are valid; the OSAP signal
+documentation describes `RealizedVol` as a CAPM-residual volatility while
+the reference code computes the total excess-return volatility, and the code
+is taken as the reference; the controls overlap with the model predictors by
+design. The panel's `Size` predictor (OSAP `mve_c`, PERMNO-level from the
+legacy monthly file, master-table step not verified) is not treated as
+identical to the CIZ `mktcap` and is not used.

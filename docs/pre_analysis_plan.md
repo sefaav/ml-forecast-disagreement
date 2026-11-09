@@ -646,7 +646,181 @@ cited as recorded on 2026-11-09.
 
 ### Estimation details still to be fixed
 
-The return variable, the Fama–MacBeth inference implementation and the
-HAC/Newey–West lag are not yet fixed (see the TODO in
-[hypotheses.md](hypotheses.md)); nor are the exact definitions of the H2
-controls. The pre-analysis plan is not frozen until they are.
+The return variable, the Fama–MacBeth inference implementation, the
+HAC/Newey–West lag, the policy for observations without an outcome and the
+H1/H2 decision rules are not yet fixed (see the TODO in
+[hypotheses.md](hypotheses.md)). The H2 control characteristics are defined
+in the next section. The pre-analysis plan is not frozen until these details
+are.
+
+## H2 control characteristics
+
+H2 ([hypotheses.md](hypotheses.md)) extends the primary H1 specification C
+with three stock characteristics, each entering as a level term and
+interacted with the original centered signal $S^c$. This section fixes their
+definitions (amendment of 2026-11-09, recorded in
+[methodology_changes.md](methodology_changes.md)). The characteristics are
+taken from data the repository already holds: the universe's market
+capitalisation and two OSAP predictors of the formation-time panel. No new
+WRDS extraction is required, and no daily CRSP data are used directly.
+
+### Sources and upstream reference
+
+- Market capitalisation: the universe column `mktcap`, the CRSP CIZ monthly
+  field `MthCap` of formation month $t$ (security level, thousands of
+  dollars), finite and strictly positive for every member of $U_t$ by
+  construction ([data_pipeline.md](data_pipeline.md)).
+- `RealizedVol` and `Illiquidity`: columns of the formation-time panel,
+  from the OSAP October 2025 release, version 2.0.0 (SHA-256 pinned in
+  `configs/baseline.yaml`). The methodological reference for their
+  construction is the OSAP code at the GitHub tag `v2.0.0` of
+  `OpenSourceAP/CrossSection` (commit
+  `b4e911e69678a7424f318617a61d813f54183123`, release published
+  2025-10-22): `Signals/pyCode/Predictors/ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F.py`,
+  `Signals/pyCode/Predictors/Illiquidity.py`,
+  `Signals/pyCode/utils/save_standardized.py` and
+  `Signals/pyCode/DataDownloads/CRSPMonthly.py`. That release builds the
+  signals in Python from the legacy CRSP daily and monthly files; the later
+  code on the default branch differs for `Illiquidity.py` and is not the
+  reference. Both predictors are dated by OSAP at the calendar month of the
+  data they use, with no lag in the construction or saving code, and the
+  panel joins them to formation month $t$ without an additional lag.
+- The panel's own `Size` predictor is not used. In the reference code it is
+  $\ln(\texttt{mve\_c})$ with `mve_c` = shares outstanding × |price| from
+  the legacy monthly file (millions of dollars) at the PERMNO level; the
+  firm-level aggregate `mve_permco` is a separate column that `Size.py` does
+  not read, but the intermediate master table feeding `Size.py` was not
+  verified. The universe's `mktcap` is the CIZ security-level
+  capitalisation. The two are conceptually close but are not treated as
+  identical; the control is defined from `mktcap` only.
+
+### Definitions
+
+Economic values, before transformation. The OSAP columns are stored signed so
+that higher values predict higher returns (sign −1 for `RealizedVol`, +1 for
+`Illiquidity`); the economic value reverses the first sign and keeps the
+second.
+
+1. **Size:** $\mathrm{SIZE}_{i,t} = \ln(\texttt{mktcap}_{i,t})$. Units do
+   not matter: a constant unit conversion shifts $\ln(\texttt{mktcap})$ by a
+   constant within the month and leaves the monthly rank unchanged.
+2. **Realized volatility:**
+   $\mathrm{RVOL}_{i,t} = -\,\texttt{RealizedVol}_{i,t}$. In the reference code,
+   daily CRSP returns are inner-joined to the daily
+   Fama–French factor file (days without factor data are dropped), the
+   excess return $r_d - r_{f,d}$ is formed, days are grouped by calendar
+   month, a stock-month is kept only if it has at least 15 excess-return
+   observations, an OLS regression of the excess return on the three
+   Fama–French factors with intercept is run within the stock-month and days
+   whose residual is missing are removed; `RealizedVol` is then the sample
+   standard deviation (one degree of freedom lost) of the remaining daily
+   *excess returns*, not of the residuals (the residual standard deviation
+   is the separate predictor `IdioVol3F`, which is not used). No
+   annualisation or scaling is applied. The 15-observation requirement is
+   checked before the residual filter, so a stock-month keeps its value even
+   if fewer than 15 residuals are valid. The OSAP signal documentation
+   describes `RealizedVol` as a CAPM-residual volatility; the code is the
+   reference and it computes the total excess-return volatility.
+3. **Illiquidity:** $\mathrm{ILLIQ}_{i,t} = +\,\texttt{Illiquidity}_{i,t}$.
+   In the reference code the daily ratio
+   $\lvert r_d\rvert / (\lvert p_d\rvert \times \text{vol}_d)$ is
+   computed from the legacy daily file, infinite values (zero volume) are
+   set to missing, the ratio is averaged over the available days of each
+   calendar month (no minimum number of days), and the monthly series is
+   lagged 1 to 11 times by plain row shifts within the PERMNO over the
+   months that exist in the daily data. `Illiquidity` in month $t$ is the
+   mean of the current and the eleven lagged monthly means when all twelve
+   are non-missing, and missing otherwise. The twelve observations are
+   therefore the twelve most recent *available* monthly observations, not
+   necessarily twelve consecutive calendar months. No price or exchange
+   filter, scaling or NASDAQ volume adjustment is applied. Volume and price
+   units are those of the legacy CRSP daily file; they are constant across
+   stocks within a month and do not affect the rank.
+
+### Timing
+
+All three characteristics use information available no later than the end
+of formation month $t$: `mktcap` is the month-$t$ record, `RealizedVol` uses
+the trading days of month $t$, and `Illiquidity` uses months up to and
+including $t$. No month-$t+1$ information enters.
+
+### Transformation
+
+Each economic characteristic $X \in \{\mathrm{SIZE}, \mathrm{RVOL},
+\mathrm{ILLIQ}\}$ is transformed separately, in each formation month $t$,
+among the members of $U_t$ with a finite value of $X$:
+
+$$
+X^c_{i,t} = 2\,\frac{\operatorname{rank}_{i,t}(X) - 1}{n^X_t - 1} - 1
+\in [-1, 1],
+$$
+
+where $\operatorname{rank}$ is the average rank for ties and $n^X_t$ is the
+number of finite values of $X$ in $U_t$ that month. A constant $X$ gives
+every stock the middle rank and $X^c = 0$; a month with $n^X_t = 1$ gives
+$X^c = 0$. This is the convention of `unit_rank` in
+`disagreement.signals.family`, centred to $[-1, 1]$ like $S^c$. Non-finite
+values are not ranked and are not imputed; they stay missing. The ranking
+population is all finite observations in $U_t$, before any restriction to
+the H2 estimation sample, so the ranks of the complete-case sample are not
+recomputed. No winsorisation or logarithm is needed after ranking; the
+logarithm in the size definition is kept for interpretability of the
+economic variable only.
+
+### H2 regressors
+
+The H2 specification is specification C with, in addition, the three level
+terms $X^c_{i,t}$ and the three interactions $S^c_{i,t} \times X^c_{i,t}$,
+estimated month by month in the same Fama–MacBeth framework. $CD^B$, the
+interaction $S^c \times CD^B$ and the bin-specific signal controls are
+unchanged, and $\beta_{\text{interaction}}$ remains the coefficient of
+interest. Within-family uncertainty $CW$ is not a control.
+
+### Estimation sample and missing values
+
+- No imputation. H2 is estimated on the formation observations of $U_t$ with
+  all three characteristics available, subject to the outcome-availability
+  rule still to be fixed.
+- $U_t$ is unchanged, and $S$, $CD^B$, $CW$ and the 20 signal bins are never
+  recomputed after restricting the sample: they keep the values computed on
+  the full cross-section.
+- The primary H1 test keeps its own sample. Specification C is additionally
+  re-estimated on the exact H2 estimation sample and reported next to H2, to
+  distinguish coefficient changes due to the controls from changes due to
+  sample composition.
+- Coverage of the characteristics among $U_t$ over the 480 OOS formation
+  months 1985-01 to 2024-12 (share of members with a finite value, from the
+  panel's coverage diagnostics): `mktcap` 1.000 in every month;
+  `RealizedVol` mean 0.997, minimum 0.985; `Illiquidity` mean 0.954,
+  minimum 0.863, below 0.90 in 18 months (1996-05/06, 1999-09 to 2000-10,
+  2021-07/08).
+
+### Known limitations
+
+- NASDAQ volume before 2004 is reported differently from NYSE/AMEX volume
+  (dealer-market double counting), which understates the Amihud ratio of
+  NASDAQ stocks relative to other stocks in the same month; the reference
+  code applies no adjustment. Monthly ranking is invariant to a common scale
+  but not to an exchange-specific one, so it does not necessarily remove
+  this distortion.
+- The twelve OSAP observations behind `Illiquidity` are twelve available
+  monthly observations, not necessarily twelve consecutive calendar months.
+- Missing `Illiquidity` values fall mostly on recently listed stocks, which
+  lack twelve monthly observations; the complete-case H2 sample therefore
+  under-represents young firms, most visibly in 1999–2000 and 2021.
+- The three characteristics overlap with the model predictors by design (the
+  panel's `Size`, `RealizedVol` and `Illiquidity` are candidate predictors
+  and $S$ depends on them). H2 tests incremental information conditional on
+  these characteristics, not causal identification or complete risk
+  adjustment.
+- The controls are existing predictors derived from licensed data already
+  held locally; they require no new WRDS extraction and are not
+  redistributed.
+
+### Implementation references
+
+Inputs: `data/processed/universe/` (`mktcap`), `data/processed/panel/`
+(`RealizedVol`, `Illiquidity`), `data/processed/conditional_disagreement/`
+($S$, bins, $CD^B$, $CW$). Rank convention: `unit_rank` in
+`disagreement.signals.family`. Upstream reference: OSAP tag `v2.0.0` as
+above. The controls are not yet implemented.

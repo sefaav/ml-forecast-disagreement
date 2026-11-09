@@ -47,7 +47,12 @@ mechanism/decomposition analysis, and H4 is a secondary economic application.
   ensemble signal and subsequent returns.
   [TODO: the statistic that measures the strength of this relationship,
   including the return variable used in evaluation; the Fama–MacBeth
-  inference implementation and the exact HAC/Newey-West lag.]
+  inference implementation and the exact HAC/Newey-West lag; the policy for
+  observations without an outcome.]
+- **H2 control characteristics:** size, realized volatility and illiquidity,
+  defined in [pre_analysis_plan.md](pre_analysis_plan.md), "H2 control
+  characteristics", each transformed separately into a monthly
+  cross-sectional rank within $U_t$ scaled to $[-1, 1]$.
 
 ## Primary hypotheses
 
@@ -119,19 +124,32 @@ H1 concerns the signal–return relationship, not the level of returns.
 ### H2: Incremental information
 
 The H1 effect remains when the primary H1 specification, with its bin-specific
-quadratic signal controls, is extended with controls for:
+quadratic signal controls, is extended with three stock characteristics,
+all measured with information available at the end of formation month $t$:
 
-- volatility;
-- size;
-- illiquidity.
+- *size:* the natural logarithm of the formation-month security-level market
+  capitalisation (CRSP CIZ `MthCap`, the universe's `mktcap`);
+- *realized volatility:* the OSAP predictor `RealizedVol` with its sign
+  reversed: the standard deviation (one degree of freedom lost) of the
+  stock's daily excess returns in month $t$, requiring at least 15 daily
+  observations;
+- *illiquidity:* the OSAP predictor `Illiquidity`, sign preserved: the
+  average of the twelve most recent available monthly means of Amihud's
+  daily ratio $\lvert r_d\rvert / (\lvert p_d\rvert \times \text{vol}_d)$,
+  the latest being month $t$.
 
-Volatility, size and illiquidity enter both as level controls and interacted
-with the original centered signal $S^c$. H2 asks whether disagreement carries
+Each characteristic is converted separately into a monthly cross-sectional
+rank among its finite values within $U_t$, scaled to $[-1, 1]$ (average ranks
+for ties), and enters both as a level term and interacted with the original
+centered signal $S^c$. Exact construction, sources, rank and missing-value
+conventions and known limitations: [pre_analysis_plan.md](pre_analysis_plan.md),
+"H2 control characteristics". H2 asks whether disagreement carries
 incremental information about *signal reliability*, not merely about return
-levels. The
-interactions are therefore needed so that disagreement is not simply
-standing in for these characteristics' own effect on the signal–return
-relationship.
+levels. The interactions are therefore needed so that disagreement is not
+simply standing in for these characteristics' own effect on the
+signal–return relationship. The three characteristics are also model
+predictors, by design: H2 tests incremental information conditional on them,
+not causal identification or complete risk adjustment.
 
 - *Null:* once these controls are included, conditional between-family
   disagreement no longer modifies the relationship between the ensemble signal
@@ -143,8 +161,14 @@ relationship.
 Within-family estimation uncertainty is not part of the H2 control set. Its
 relation to between-family disagreement is examined in H3.
 
-[TODO: exact trailing-volatility definition; exact illiquidity measure; exact
-size measure.]
+H2 is estimated on the formation observations of $U_t$ for which all three
+characteristics are available, without imputation; $U_t$, $S$, $CD^B$, $CW$
+and the signal bins are never recomputed on that subsample. The primary H1
+test keeps its own sample; specification C is additionally re-estimated on
+the exact H2 estimation sample so that coefficient changes can be told apart
+from sample-composition changes. The return variable, the Fama–MacBeth
+inference and the policy for observations without an outcome are still to be
+fixed (see the forecast-reliability TODO above).
 
 ## Secondary analysis
 
