@@ -52,12 +52,15 @@ bounded prediction ranks, signal extremity, and measured disagreement.
 
 # Hypotheses
 
-- **H1 (primary):** at comparable signal level $S$, and controlling for
-  nonlinear signal strength ($|S^c|$ and $S^c \times |S^c|$), higher
-  conditional between-family disagreement is expected to weaken the
+- **H1 (primary):** at comparable signal level $S$, and after accounting for
+  the relation between returns and the signal within each of the 20 monthly
+  signal bins (bin-specific intercepts and bin-specific linear and quadratic
+  terms in $S^c$, estimated month by month in a Fama–MacBeth framework),
+  higher conditional between-family disagreement is expected to weaken the
   signal–return relationship. The expected interaction sign is negative, but
   inference is two-sided: a significant positive interaction is reported as
-  evidence in the opposite direction.
+  evidence in the opposite direction. The exact specification is in
+  [hypotheses.md](hypotheses.md).
 - **H2 (primary):** the effect remains after additionally controlling for
   volatility, size and illiquidity, as levels and interacted with $S^c$.
 - **H3 (secondary):** examines whether between-family disagreement and
@@ -80,7 +83,10 @@ $S^c = 2(S - 0.5) \in [-1, 1]$, and signal strength (extremity) is $|S^c|$.
 Raw disagreement is the standard deviation of the family ranks. Because ranks
 are bounded, raw disagreement is mechanically constrained at high signal
 strength, so the primary measure ranks it within 20 monthly quantile bins of
-the signal level $S$ (not of $|S^c|$). Within-family estimation uncertainty is
+the signal level $S$ (not of $|S^c|$). Because the bound still acts inside the
+extreme bins, the H1 regression controls for the signal within each bin with
+bin-specific linear and quadratic terms rather than with global
+signal-strength controls. Within-family estimation uncertainty is
 constructed from replica-rank dispersion, computed separately within each model
 family. Given the design sensitivity documented by Chen et al. (2026),
 remaining implementation choices will be pre-specified before any empirical
@@ -98,7 +104,9 @@ be tested.
 
 # Main Risks and Limitations
 
-- Signal binning may not fully remove the mechanical link to signal strength.
+- Signal binning does not fully remove the mechanical link to signal strength
+  inside the extreme bins; the bin-specific signal controls absorb its
+  within-bin quadratic component, not every conceivable nonlinearity.
 - With four families and five replicas each, both uncertainty measures are
   noisy, lowering test power and complicating the H3 comparison.
 - Disagreement may proxy for characteristics the controls do not capture.

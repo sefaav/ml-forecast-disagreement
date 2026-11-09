@@ -463,7 +463,190 @@ Only the conditional-disagreement files are read, and their signal bins are
 checked against the ensemble signal; no target or return is used. There is
 no significance test, threshold or pass/fail rule, and the diagnostic does
 not change the design: any methodological decision it prompts is taken
-separately and explicitly. Implementation:
+separately and explicitly, as in the next section. Implementation:
 `disagreement.diagnostics.mechanical_bias`
 (`python -m disagreement.diagnostics.mechanical_bias`, over the complete
 baseline OOS sample, output under `data/diagnostics/mechanical_bias/`).
+
+## Signal controls in the H1 specification
+
+This section records a pre-results amendment of 2026-11-09 to the H1
+specification of [hypotheses.md](hypotheses.md); the change history is in
+[methodology_changes.md](methodology_changes.md). All evidence below comes from
+the saved OOS signals and model metadata, from mathematical analysis and from
+experiments with fully synthetic outcomes. No realized future return and no
+H1–H4 result was examined.
+
+### Diagnostic evidence (saved signals only)
+
+Over the 480 baseline OOS months, the signal-bin conditioning removes the
+relation between disagreement and the signal in the full monthly cross-section
+(mean monthly correlation of $CD^B$ with $|S^c|$: −0.017) but not inside the
+extreme bins: the equal-weight mean within-bin correlation of $CD^B$ with $S$
+is about +0.65 in bin 1 and −0.66 in bin 20, with the same sign in every
+month except the twelve 2021 months, where it reverses (see "Elastic Net in
+2021" below), and about +0.21 and −0.21 in bins 2 and 19. Within a bin,
+$E[CD^B \mid S]$ is close to linear in $S$, with slopes of roughly +9 in bin 1
+and −8 in bin 20 and near 0 in the central bins. The conditional within-family
+uncertainty $CW$ shows the same pattern (about +0.72 and −0.69). Finer
+conditioning does not remove it: with 30 or 40 bins the extreme-bin
+correlations stay at about ±0.66 and the dependence moves into the narrower
+boundary bins. The pattern is a boundary property of bounded ranks, not a
+consequence of the bin width.
+
+### Consequence for H1
+
+Write $CD^B = m(S) + u$, with $m(S) = E[CD^B \mid S]$ inside the bin. The
+interaction regressor is $S^c \times CD^B = S^c\,m(S) + S^c\,u$. The first
+term is a function of the signal alone, quadratic within each bin when $m$ is
+linear there. Under a nonlinear signal–return relation and no true
+disagreement effect, signal controls that do not span this term let it load
+on the interaction coefficient. The sign of this bias is not fixed by the
+geometry of $m$ alone: it depends on how the unspanned part of the
+signal–return relation covaries with $S^c\,m(S)$, so it can take either sign.
+Under the synthetic signal–return relations used in the experiments below,
+with $m$ increasing in the low bins and decreasing in the high bins, the bias
+was negative, in the pre-specified H1 direction; this is a property of those
+scenarios, not a general result. Controls that are bin-specific in $S$ absorb
+the term whatever the sign. Global smooth controls, in $|S^c|$ or in splines
+of $S$ or of its rank, do not, because the term has a bin-dependent,
+non-smooth structure.
+
+### Specification comparison
+
+Candidates, each estimated month by month:
+
+- A: the original specification, with the global controls $|S^c|$ and
+  $S^c \times |S^c|$;
+- B: (month, signal bin) intercepts and bin-specific linear terms in $S^c$;
+- C: B plus bin-specific quadratic terms in $S^c$;
+- D: a natural cubic spline of the re-ranked signal with seven fixed knots,
+  $CD^B$ residualised on the spline, and the interaction of that residual
+  with the re-ranked signal;
+- E: a two-step version in which $CD^B$ is first detrended on $S$ within each
+  (month, signal bin). With the controls of C this estimator is algebraically
+  identical to C (Frisch–Waugh–Lovell, verified numerically); with the
+  controls of B only it is a distinct specification, close to B and C but
+  identical to neither.
+
+Diagnostics on the saved signals: after partialling out each candidate's other
+regressors, the interaction regressor of A and D keeps a within-bin
+correlation of about −0.65 with $S$ in bins 1 and 20, and about half of its
+remaining variance in those bins is a function of the signal alone; for B and
+C this share is at the noise floor. The spline of D removes none of the
+bin-dependent structure of $CD^B$. C retains about 98.15% of the identifying
+interaction variance of B, an estimated standard-error cost of about 0.9%.
+
+Experiments with fully synthetic outcomes, using the saved $S$, $CD^B$ and
+bins as fixed regressors and independent homoskedastic noise: under a
+boundary-nonlinearity scenario with no true disagreement interaction,
+two-sided 5% tests rejected in about 18.3% of replications for A, 5.7% for
+B, 5.3% for C and 20.7% for D, and the spurious rejections of A and D were
+almost all in the pre-specified direction. In a targeted stress scenario with
+strong within-bin curvature of opposite sign on the two sides of $S = 0.5$, B
+retained a bias approaching one standard error, while C absorbed the
+quadratic nuisance component exactly. These experiments compare
+specifications; they are not a guarantee of nominal inference under the
+dependence of actual equity returns.
+
+Decision: C is the primary H1 specification and B is the pre-specified
+specification robustness. The spline/re-ranked-signal approach is rejected,
+and the ensemble signal is not re-ranked: re-ranking changes the estimand
+without removing the bin-level dependence. The definitions of $S$, $CD^B$,
+$CW$ and the 20 signal bins are unchanged.
+
+### Elastic Net in 2021
+
+In the 2021 episode the Elastic Net family produced constant forecasts in all
+twelve OOS formation months: every candidate of the frozen grid had a negative
+validation rank IC except the two most penalised ones, which fit the intercept
+only, score exactly 0 and were selected under the frozen rule. This is a
+legitimate outcome of the protocol, verified from the saved metadata and
+forecasts; no other family-year is affected. The ranking convention assigns a
+family rank of 0.5 to a constant cross-section. With one family fixed at 0.5,
+$S = (0.5 + 3\bar S_3)/4$ and
+$(D^{B,\mathrm{raw}})^2 = \tfrac{3}{4}\,D_3^2 + \tfrac{3}{16}\,(\bar S_3 - 0.5)^2$,
+where $\bar S_3$ and $D_3$ are the mean and the population dispersion of the
+three active family ranks: the feasible geometry of four-family disagreement
+changes, and the usual within-bin dependence of $CD^B$ on $S$ reverses at the
+extremes. In 2021 the mean within-bin correlation of $CD^B$ with $S$ was about
+−0.947 in bin 1 and +0.788 in bin 20, against about +0.674 and −0.629 for a
+three-family measure built from the active families, and about +0.67 and
+−0.67 in 2020 and 2022. The signal ordering, the bins and $CW$ are the same
+under both constructions up to ties.
+
+Decision: the fixed four-family design and the saved 2021 outputs are kept as
+primary; no inactive-family rule is introduced, and the hyperparameter
+selection rule is unchanged. The bin-specific signal controls of C absorb a
+systematic dependence on signal location whatever its sign, but they do not
+make the four-family and three-family disagreement rankings equivalent, so the
+primary H1 test is repeated without the twelve 2021 formation months as a
+robustness analysis. No claim about the effect of 2021 on future returns or on
+the sign of any H1 estimate is made.
+
+### Reproducibility of the evidence
+
+Only part of the evidence above can be regenerated from the repository.
+
+Reproducible from committed code (given the saved OOS signals, which require
+licensed data): the full-cross-section and within-bin correlations of
+$D^{B,\mathrm{raw}}$ and $CD^B$ with $S$ and $|S^c|$, including the bin 1 and
+bin 20 values of about ±0.65, the bin 2 and bin 19 values of about ±0.21 and
+the mean monthly correlation of −0.017, via
+`python -m disagreement.diagnostics.mechanical_bias` (outputs under
+`data/diagnostics/mechanical_bias/`, not versioned).
+
+Not reproducible from the repository: the within-bin slopes and linearity of
+$E[CD^B \mid S]$; the $CW$ within-bin correlations; the 30- and 40-bin
+sensitivity; the specification diagnostics (partialled-out interaction
+correlations, within-bin variance shares, the 98.15% and 0.9% figures); the
+synthetic-outcome experiments and the stress scenario; the numerical
+Frisch–Waugh–Lovell check; and the Elastic Net 2021 audit with its
+three-family comparison. These were produced by temporary scripts run outside
+the repository on 2026-11-09 and deleted after use; only the aggregates quoted
+above were retained. They are recorded figures, not reproducible results.
+
+Definitions sufficient to re-implement the non-reproducible items:
+
+- Regressors: the saved $S$, $CD^B$ and 20 signal bins over the 480 baseline
+  months, used as fixed. Bin-specific terms use $S^c$ demeaned within
+  (month, bin), which spans the same space as raw $S^c$.
+- Specification D: natural cubic spline basis with seven knots at the 0.05,
+  0.20, 0.35, 0.50, 0.65, 0.80 and 0.95 quantiles of the within-month unit
+  rank of $S$; $CD^B$ residualised on the basis; interaction of that residual
+  with the centred rank. Variant D_S: the same basis on $S^c$ with monthly
+  quantile knots.
+- Synthetic outcomes: $y = g(S) + d\,S^c\,CD^B + \varepsilon$ with
+  $\varepsilon \sim N(0, 0.10^2)$ i.i.d., `numpy.random.default_rng(20261109)`,
+  300 replications, common random numbers across scenarios and
+  specifications. Scenarios with $d = 0$: $g = 0.01\,S^c$;
+  $g = 0.01\,S^c + 0.015\,(S^c)^3$; $g = 0.012\tanh(2.5\,S^c)$; boundary
+  nonlinearity
+  $g = 0.01\,S^c + 0.05\max(S - q_{95}, 0) - 0.05\max(q_{05} - S, 0)$ with
+  monthly 5th and 95th percentiles of $S$. Scenarios with $d = -0.01$ (linear
+  and cubic $g$) and $d = +0.01$ (linear $g$).
+- Inference in the experiments: monthly OLS, Fama–MacBeth mean of the 480
+  interaction coefficients, standard error equal to their standard deviation
+  divided by $\sqrt{480}$, rejection when $|t| > 1.96$.
+- Stress scenario (noise-free exact bias):
+  $g = 0.01\,S^c + 0.01\,\operatorname{sign}(S^c)\,(\tilde S / h_b)^2$, where
+  $\tilde S$ is $S^c$ demeaned within (month, bin) and $h_b$ is half the bin's
+  range of $S^c$; the Fama–MacBeth standard-error reference was about 0.00078.
+- Elastic Net 2021: validation scores and selected candidate index read from
+  the saved model-selection metadata; the three-family measure is the
+  population standard deviation of the Random Forest, LightGBM and MLP ranks,
+  ranked within the existing (month, bin) cells.
+
+The intended remedy is a single deterministic diagnostic module, a sibling of
+`disagreement.diagnostics.mechanical_bias`, that reads the saved signals and
+metadata, computes these items with the definitions above and writes
+aggregates only under `data/diagnostics/`, with a unit test on synthetic
+signals. It is not yet implemented. Until it is, the figures above are to be
+cited as recorded on 2026-11-09.
+
+### Estimation details still to be fixed
+
+The return variable, the Fama–MacBeth inference implementation and the
+HAC/Newey–West lag are not yet fixed (see the TODO in
+[hypotheses.md](hypotheses.md)); nor are the exact definitions of the H2
+controls. The pre-analysis plan is not frozen until they are.

@@ -1,7 +1,8 @@
 # Hypotheses
 
 These hypotheses are specified before any empirical results are produced. No
-results exist yet.
+return-based results exist yet. Amendments made before any return is examined
+are recorded in [methodology_changes.md](methodology_changes.md).
 
 H1 and H2 are the primary contribution. H3 is a secondary
 mechanism/decomposition analysis, and H4 is a secondary economic application.
@@ -45,31 +46,50 @@ mechanism/decomposition analysis, and H4 is a secondary economic application.
 - **Forecast reliability:** the strength of the relationship between the
   ensemble signal and subsequent returns.
   [TODO: the statistic that measures the strength of this relationship,
-  including the return variable used in evaluation; exact HAC/Newey-West lag.]
+  including the return variable used in evaluation; the Fama–MacBeth
+  inference implementation and the exact HAC/Newey-West lag.]
 
 ## Primary hypotheses
 
 ### H1: Forecast reliability
 
-At comparable ensemble signal level $S$, and after accounting for nonlinear
-signal strength, higher conditional between-family disagreement is expected to
-weaken the relationship between the ensemble signal and subsequent returns.
+At comparable ensemble signal level $S$, and after accounting for the relation
+between subsequent returns and the signal within each signal bin, higher
+conditional between-family disagreement is expected to weaken the relationship
+between the ensemble signal and subsequent returns.
 
-Conceptually, the primary H1 reliability specification is
+The primary H1 reliability specification is estimated separately in each OOS
+formation month $t$, in a Fama–MacBeth framework:
 
 $$
-r_{i,t+1} = \alpha_t + \beta_1 S^c + \beta_2 CD^B + \beta_3 (S^c \times CD^B)
-+ \beta_4 |S^c| + \beta_5 (S^c \times |S^c|) + \varepsilon_{i,t+1}
+r_{i,t+1} = \alpha_{t,b(i,t)} + \gamma_{t,b(i,t)}\,S^c_{i,t}
++ \eta_{t,b(i,t)}\,(S^c_{i,t})^2 + \beta_{2,t}\,CD^B_{i,t}
++ \beta_{3,t}\,(S^c_{i,t} \times CD^B_{i,t}) + \varepsilon_{i,t+1}
 $$
 
-where $CD^B$ is conditional between-family disagreement and
-$\beta_3 \equiv \beta_{\text{interaction}}$ is the primary interaction
-coefficient (estimation details: see the forecast-reliability TODO above). The
-nonlinear signal-strength controls $|S^c|$ and $S^c \times |S^c|$ allow
-subsequent returns to depend nonlinearly on signal extremity even after
-disagreement is conditioned within signal-level bins; the bins are not assumed
-to eliminate the mechanical relation between disagreement and signal strength
-perfectly.
+where $S^c = 2(S - 0.5)$ uses the original, non-re-ranked ensemble signal,
+$b(i,t)$ is the stock's existing monthly signal bin among the 20 conditioning
+bins, and $CD^B$ is the existing conditional between-family disagreement. The
+intercept and the linear and quadratic signal terms are specific to each
+(month, signal bin); the disagreement level and the signal × disagreement
+interaction are common to the month's cross-section. The primary coefficient
+of interest, $\beta_{\text{interaction}}$, is the Fama–MacBeth average of the
+monthly $\beta_{3,t}$ (estimation details: see the forecast-reliability TODO
+above).
+
+The mechanical-bias diagnostics ([pre_analysis_plan.md](pre_analysis_plan.md),
+"Signal controls in the H1 specification") found that, inside the extreme
+signal bins, conditional disagreement still depends strongly on the exact
+signal location, with within-bin correlations of about +0.65 in bin 1 and
+−0.66 in bin 20. Because H1 rests on a signal × disagreement interaction,
+signal controls that are not flexible enough can let a nonlinear
+signal–return relation appear as a disagreement effect. The bin-specific
+quadratic controls absorb any relation between returns and the signal that is
+quadratic within a bin, without redefining the signal or the disagreement
+measure. They do not eliminate every conceivable nonlinear relation, and they
+do not establish causality. They replace the global controls $|S^c|$ and
+$S^c \times |S^c|$ of the original specification, which is preserved in
+[methodology_changes.md](methodology_changes.md).
 
 - *Null:* $\beta_{\text{interaction}} = 0$; at comparable signal level, the
   relationship between the ensemble signal and subsequent returns does not vary
@@ -85,18 +105,30 @@ in the opposite direction, not discarded.
 
 H1 concerns the signal–return relationship, not the level of returns.
 
+**Pre-specified H1 robustness**
+
+- *Bin-specific linear controls:* the same equation without the bin-specific
+  quadratic term $\eta_{t,b(i,t)}\,(S^c_{i,t})^2$. This is the primary
+  specification robustness.
+- *Excluding 2021:* the primary test repeated without the twelve 2021 OOS
+  formation months (2021-01 to 2021-12), during which the Elastic Net family
+  produced constant cross-sectional forecasts (see the pre-analysis plan). The
+  baseline sample, the four-family ensemble and the construction of $CD^B$ and
+  $CW$ are unchanged; the exclusion is a robustness analysis only.
+
 ### H2: Incremental information
 
-The H1 effect remains when the H1 specification, which already includes the
-nonlinear signal-strength controls, is extended with controls for:
+The H1 effect remains when the primary H1 specification, with its bin-specific
+quadratic signal controls, is extended with controls for:
 
 - volatility;
 - size;
 - illiquidity.
 
 Volatility, size and illiquidity enter both as level controls and interacted
-with $S^c$. H2 asks whether disagreement carries incremental
-information about *signal reliability*, not merely about return levels. The
+with the original centered signal $S^c$. H2 asks whether disagreement carries
+incremental information about *signal reliability*, not merely about return
+levels. The
 interactions are therefore needed so that disagreement is not simply
 standing in for these characteristics' own effect on the signal–return
 relationship.
@@ -131,11 +163,24 @@ analysis.
   bootstrap replicas of a fixed family. This distinction is used to examine
   whether structural model disagreement and estimation uncertainty contain
   distinct information about forecast reliability.
+- The intended analysis is a joint specification: conditional between-family
+  disagreement $CD^B$ and conditional within-family uncertainty $CW$ both
+  enter as level terms and as separate interactions with the original centered
+  signal $S^c$, with the same bin-specific quadratic signal controls as the
+  primary H1 specification and in the same Fama–MacBeth framework. The
+  question is whether each measure contributes information about forecast
+  reliability conditional on the other. A direct comparison of the two
+  interaction coefficients does not by itself establish which uncertainty
+  concept is more informative: the measures are built from different numbers
+  of components and different ranking operations.
 - H3 remains secondary because both measures contain finite-model measurement
   noise: four families for between-family disagreement and K = 5 replicas per
   family for within-family estimation uncertainty. The two measures may be
   estimated with different precision, so any comparison between them must take
-  this noise into account.
+  this noise into account. An analysis-of-variance correction that treats
+  within-family dispersion as independent sampling noise is not a required
+  analysis: for a given replica the four families share the same bootstrap
+  month draws, and $CD^B$ and $CW$ use different ranking operations.
   [TODO: how measurement noise will be addressed; literature reference needed.]
 
 ## Secondary economic application
