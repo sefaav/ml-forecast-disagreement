@@ -156,10 +156,12 @@ episode (`configs/baseline.yaml`, `model_selection`):
    block;
 4. the candidate with the highest validation score is selected; an exact tie
    keeps the first candidate in the configured order;
-5. the selected specification is refitted on training and validation, with
-   the same predictor set;
-6. that single refitted model produces the forecasts for all twelve OOS
-   formation months of the episode, without refitting within the year.
+5. the selected hyperparameters are frozen for the episode;
+6. the forecasts of the twelve OOS formation months are produced by the five
+   month-cluster bootstrap replicas of "Out-of-sample replica forecasts",
+   each fitted with those hyperparameters and the same predictor set on a
+   resample of training and validation; no un-resampled refit is made and
+   nothing is refitted within the year.
 
 The validation score (`monthly_rank_ic`) is the equal-weighted mean, over
 validation formation months, of the monthly rank information coefficient. In
@@ -637,21 +639,41 @@ Definitions sufficient to re-implement the non-reproducible items:
   population standard deviation of the Random Forest, LightGBM and MLP ranks,
   ranked within the existing (month, bin) cells.
 
-The intended remedy is a single deterministic diagnostic module, a sibling of
+The remedy is a single deterministic diagnostic module, a sibling of
 `disagreement.diagnostics.mechanical_bias`, that reads the saved signals and
-metadata, computes these items with the definitions above and writes
-aggregates only under `data/diagnostics/`, with a unit test on synthetic
-signals. It is not yet implemented. Until it is, the figures above are to be
-cited as recorded on 2026-11-09.
+metadata only, writes aggregates under `data/diagnostics/` and is tested on
+synthetic signals. It is not yet implemented; it must run before the first
+regression on real outcomes, and it keeps two categories apart:
 
-### Estimation details still to be fixed
+- *Deterministic forecast-only diagnostics* (within-bin slopes and $CW$
+  correlations, 30/40 bins, partialled-out correlations, variance shares,
+  the 98.15% and 0.9% figures, the Frisch–Waugh–Lovell check, the Elastic
+  Net 2021 audit and the design diagnostics of "Estimation protocol") depend
+  only on the saved signals and are expected to reproduce the recorded
+  figures within rounding (correlations ±0.005, shares ±0.05 percentage
+  point). A discrepancy is recorded; the recorded figures are not rewritten.
+- *Synthetic-outcome experiments* cannot be replicated exactly: their code
+  is lost, and the recorded seed does not fix the order of the draws in a
+  new implementation. The module reruns them under the definitions above
+  with a newly documented implementation and reports the new rejection rates
+  as a dated rerun, never as a replication of the 18.3%, 5.7%, 5.3% and
+  20.7% figures. The expectation is qualitative: A and D well above 5%, B
+  and C near 5%.
 
-The return variable, the Fama–MacBeth inference implementation, the
-HAC/Newey–West lag, the policy for observations without an outcome and the
-H1/H2 decision rules are not yet fixed (see the TODO in
-[hypotheses.md](hypotheses.md)). The H2 control characteristics are defined
-in the next section. The pre-analysis plan is not frozen until these details
-are.
+Decision status. A failed deterministic check (a forecast-only figure
+outside its tolerance, an integrity or provenance failure) or a material
+mathematical inconsistency blocks the outcome analysis until it is resolved
+and recorded in [methodology_changes.md](methodology_changes.md). The rerun
+synthetic-outcome results are disclosed as new simulations: neither a
+reproduction of the recorded figures nor an automatic pass/fail gate. If
+they seriously challenge the validity of the frozen specification (for
+example C rejecting far above 5% with no true effect), the cause is
+investigated and any amendment is documented with its evidence before any
+real outcome is inspected; the protocol is never changed silently on the
+basis of simulations.
+
+Until the module has run, the figures above are cited as recorded on
+2026-11-09.
 
 ## H2 control characteristics
 
@@ -778,16 +800,10 @@ interest. Within-family uncertainty $CW$ is not a control.
 
 ### Estimation sample and missing values
 
-- No imputation. H2 is estimated on the formation observations of $U_t$ with
-  all three characteristics available, subject to the outcome-availability
-  rule still to be fixed.
-- $U_t$ is unchanged, and $S$, $CD^B$, $CW$ and the 20 signal bins are never
-  recomputed after restricting the sample: they keep the values computed on
-  the full cross-section.
-- The primary H1 test keeps its own sample. Specification C is additionally
-  re-estimated on the exact H2 estimation sample and reported next to H2, to
-  distinguish coefficient changes due to the controls from changes due to
-  sample composition.
+- No imputation. The H2 sample, the treatment of missing outcomes and the
+  re-estimation of specification C on the exact H2 sample are fixed in
+  "Estimation protocol"; $U_t$, $S$, $CD^B$, $CW$ and the bins keep their
+  full-cross-section values.
 - Coverage of the characteristics among $U_t$ over the 480 OOS formation
   months 1985-01 to 2024-12 (share of members with a finite value, from the
   panel's coverage diagnostics): `mktcap` 1.000 in every month;
@@ -855,3 +871,224 @@ since it was built, with no option to skip these checks.
 Rerunning the conditional disagreement of a year, a new target build, a new
 `build` or a new CRSP extract removes the controls as well. Tests on
 synthetic data: `tests/test_h2_controls.py`.
+
+## Estimation protocol
+
+Frozen on 2026-11-09 before any outcome was examined
+([methodology_changes.md](methodology_changes.md)). It fixes how H1–H4 are
+estimated and reported. The estimation engine and the diagnostic module of
+"Reproducibility of the evidence" are implemented separately and tested on
+synthetic data before the first regression on real outcomes. Hypotheses,
+expected directions and verdict categories: [hypotheses.md](hypotheses.md).
+
+### Evaluation outcome
+
+Primary: `target_rank` ("Prediction target"), so that $\beta_3$ measures how
+the slope of the outcome rank on $S^c$ varies with $CD^B$ on a scale that is
+identical in every month and not dominated by extreme returns. Robustness:
+raw `ret_next`, neither winsorised nor standardised, with the same
+regressors. Both are always reported; the primary outcome decides.
+
+### Monthly regressions
+
+Each OOS formation month $t$ is estimated separately by equal-weighted OLS.
+Specification C is estimated in the bin-local basis
+
+$$
+y_i = \sum_{b=1}^{20} \mathbb{1}[b(i) = b]\,
+\big(\alpha_b + \tilde\gamma_b\, z_i + \tilde\eta_b\, q_i\big)
++ \beta_2\, CD^B_i + \beta_3\, S^c_i\, CD^B_i + \varepsilon_i,
+$$
+
+with $z_i = (S^c_i - c_b)/h_b$, where $c_b$ and $h_b$ are the mean and the
+half-range of $S^c$ in cell $(t, b)$, and $q_i = z_i^2 - \overline{z^2_b}$.
+The constants $c_b$, $h_b$ and $\overline{z^2_b}$ are computed from all
+members of $U_t$ in the cell, before the outcome and complete-case
+restrictions, so every specification and sample of a month uses the same
+basis. The 20 cell intercepts replace a global intercept. The basis spans
+exactly the bin-specific terms in $S^c$ and $(S^c)^2$ of hypotheses.md, so
+$\beta_2$
+and $\beta_3$ are unchanged (checked with synthetic outcomes on the saved
+regressors to $3 \times 10^{-13}$) while the scaled condition number falls
+from about $4 \times 10^3$ to about 4. $S^c \times CD^B$ uses the raw $S^c$
+and the saved $CD^B$. Specification B drops the $q_i$ terms. H2 adds
+$X^c_k$ and $S^c X^c_k$ for the three controls on the complete-case sample;
+H3 adds $CW$ and $S^c \times CW$ on the H1 sample.
+
+Samples: the H1 sample is the members of $U_t$ with a finite outcome; the
+H2 sample is the H1 sample with `complete_case` true. $U_t$, $S$, the bins,
+$CD^B$, $CW$, $X^c$ and `target_rank` are never recomputed on a subsample.
+Specification C is always re-estimated on the H2 sample and reported next to
+H2. The monthly share of missing outcomes and the sample sizes are reported.
+
+### Estimable months
+
+A month is estimable for a sample and a design if every cell $(t, b)$ holds
+at least 30 observations of that sample with at least 3 distinct values of
+$S^c$, and if the design matrix with columns scaled to unit Euclidean norm
+has $\sigma_{\min} / \sigma_{\max} > 10^{-8}$ (singular value
+decomposition). On the saved regressors every cell holds at least 86 stocks
+(52 on the complete-case sample) and the scaled condition number is below
+10, so no month is expected to fail. A failing month is dropped from the
+corresponding coefficient series and listed. Paired comparisons (C on the H2
+sample against H2 and against H1; H3 against H1) use the months estimable
+for every series involved; if that set differs from the primary H1 set, H1
+is also reported on it.
+
+### Fama–MacBeth inference
+
+For a monthly series $\beta_\tau$ (a coefficient, a slope or a paired
+difference) on the calendar grid $\tau = 1, \dots, N$ of the 480 OOS months,
+let $a_\tau = 1$ for estimable months, $T = \sum_\tau a_\tau$,
+$\bar\beta = T^{-1} \sum_\tau a_\tau \beta_\tau$ and
+$x_\tau = a_\tau (\beta_\tau - \bar\beta)$, zero elsewhere. With $L = 6$
+calendar months,
+
+$$
+\hat\Gamma_l = \frac{1}{T} \sum_{\tau = l+1}^{N} x_\tau x_{\tau - l}, \qquad
+\hat\Omega = \hat\Gamma_0
++ 2 \sum_{l=1}^{L} \Big(1 - \frac{l}{L + 1}\Big) \hat\Gamma_l, \qquad
+\mathrm{SE} = \sqrt{\hat\Omega / T}.
+$$
+
+Bartlett kernel, normalisation $1/T$, no finite-sample correction. Without
+missing months this is Newey and West (1987); $L = 0$ gives the classical
+Fama–MacBeth standard error with the population variance. Inference uses
+the standard normal distribution throughout: $t = \bar\beta / \mathrm{SE}$,
+$p = 2\,(1 - \Phi(|t|))$ and the 95% interval $\bar\beta \pm 1.96\,\mathrm{SE}$.
+$L = 0$ and $L = 12$ are reported as sensitivity analyses without
+decisional value. For a vector series the same weights give $\hat\Omega$ as
+a matrix and the Wald statistic $T\, \bar\beta' \hat\Omega^{-1} \bar\beta$,
+referred to $\chi^2$ with the vector's dimension. Implementation checks: a
+complete series must match `statsmodels`
+`cov_hac_simple(nlags=6, use_correction=False)` of a regression on a
+constant; a series with gaps must match the explicit sum over observed
+pairs.
+
+### Reporting rules for H1 and H2
+
+- *Fixed sequence.* H1 is tested first, two-sided at 5%; H2 is confirmatory
+  only if H1 is supported in the negative direction (verdicts:
+  hypotheses.md). Every coefficient, standard error, p-value and interval
+  of every specification is reported whatever the gate outcome.
+- *Paired differences*, with HAC intervals and no causal reading. Write
+  $\beta_3^{H1}$, $\beta_3^{C|H2}$ and $\beta_3^{H2}$ for C on the H1
+  sample, C on the H2 sample and H2.
+  $\Delta_\tau = \hat\beta^{H2}_{3,\tau} - \hat\beta^{C|H2}_{3,\tau}$ is the
+  change due to the controls on a fixed sample and
+  $\Delta^S_\tau = \hat\beta^{C|H2}_{3,\tau} - \hat\beta^{H1}_{3,\tau}$ the
+  change due to sample composition. When
+  $\bar\beta_3^{C|H2} < 0$, an interval for $\bar\Delta$ excluding 0 is
+  reported as attenuation towards zero if $\bar\Delta > 0$ and as
+  amplification if $\bar\Delta < 0$; an interval containing 0 is reported as
+  "no detected change" together with the interval, never as absence of
+  attenuation. Controls absorb part of the covariation; they do not
+  "explain" it.
+- *Marginal signal slopes.* In cell $(t, b)$, $\partial E[y] / \partial S^c =
+  (\tilde\gamma_b + 2 \tilde\eta_b z) / h_b + \beta_3\, CD^B +
+  \sum_k \delta_k X^c_k$, the last term in H2 only, with $h_b$ the fixed
+  constant of "Monthly regressions". The reported monthly slope is the
+  equal-weight average over the 20 bins at the bin centre ($z = 0$),
+  $\bar g_\tau(c) = \tfrac{1}{20} \sum_b \tilde\gamma_{b,\tau} / h_{b,\tau} +
+  c\, \hat\beta_{3,\tau} + \sum_k \hat\delta_{k,\tau}\, x_k$ for
+  $c \in \{0.1, 0.5, 0.9\}$, where $x_k = 0$ in H1 (no control term) and in
+  the primary H2 evaluation ($X^c = 0$, the median stock of $U_t$). As an
+  optional descriptive comparison, H2 also reports the slope at
+  $x_k = \bar X^c_{k,\tau}$, the monthly mean of $X^c_k$ among the H2
+  complete cases. Each $\bar g_\tau(c)$ is a monthly series with the HAC
+  interval of "Fama–MacBeth inference"; the $\hat\delta_k$ are reported with
+  intervals. These are local conditional slopes of the outcome with respect
+  to $S^c$ inside a bin, averaged over bins; they are not a global measure
+  of rank-prediction accuracy and are not compared with any reference value.
+- *Two statements.* "Negative $S^c \times CD^B$ interaction" is the
+  statistical verdict. "A positively informative signal becomes less
+  reliable where disagreement is higher" is claimed only if, in addition,
+  $\bar g(0.1) > 0$ with $p < 0.05$ in the primary evaluation ($x_k = 0$).
+  If $\bar g(0.9)$ is significantly negative, the result is described as a
+  sign reversal.
+
+### Robustness and subperiods
+
+Each analysis repeats the primary H1 test with one change; H2, H3 and H4
+are estimated in their primary form only. Results are descriptive (sign and
+significance are compared with the primary result) and do not alter the
+primary verdict.
+
+| Analysis | Change |
+|---|---|
+| Specification B | no bin-specific quadratic term (hypotheses.md) |
+| Excluding 2021 | without the twelve 2021 formation months (hypotheses.md) |
+| Raw outcome | `ret_next` in place of `target_rank` |
+| Raw disagreement | $D^{B,\mathrm{raw}}$ in place of $CD^B$, same controls |
+| Range measure | max − min of the four family ranks, ranked within the same (month, bin) cells, in place of $CD^B$ |
+| 10 bins | $CD^B$, $CW$ and the bin-specific controls recomputed with 10 monthly bins of $S$ |
+| Leave one family out | four variants: $S$ and $D^{B,\mathrm{raw}}$ from the three remaining families, bins and $CD^B$ recomputed on that $S$ |
+| HAC lag | $L = 0$ and $L = 12$ |
+| Subperiods | 1985-01 to 2004-12 and 2005-01 to 2024-12, 240 months each, chosen for equal length and not for any event |
+
+### H3
+
+Specification C plus $CW$ and $S^c \times CW$ on the H1 sample. The two
+interaction coefficients are tested separately, two-sided at 5%; "distinct
+information" requires both to reject (intersection–union test, level 5%
+without correction), and the joint Wald test of the two interactions is
+reported as a complement. No magnitude comparison, no measurement-error
+correction and no replica-split reliability diagnostic (reasons:
+hypotheses.md, H3). H3 is outside the H1 → H2 gate.
+
+### H4
+
+Secondary, pre-specified, conditional observed-outcome comparison of
+selection rules on gross one-month returns. It is not an implementable
+fixed-weight portfolio backtest.
+
+*Formation.* In each OOS formation month $t$ the long leg is signal decile
+10 and the short leg signal decile 1 of $U_t$, decile $d$ being the union of
+signal bins $2d - 1$ and $2d$ ("Conditional disagreement"). Holdings and
+weights are fixed at $t$: equal weights $1 / n_{\mathrm{leg}}$, one-month
+holding.
+
+*Filters.* Each filter removes $k = \lfloor \varphi\, n_{\mathrm{leg}} \rfloor$
+stocks from each leg before weighting, with $\varphi = 1/3$ (primary) and
+$\varphi \in \{0.2, 0.5\}$ (sensitivity). The disagreement filter removes
+the $k$ highest $CD^B$; the volatility filter the $k$ highest economic
+realized volatility (`realized_volatility`, that is $-$`RealizedVol`, higher
+meaning more volatile); the signal-extremity filter the $k$ lowest $|S^c|$,
+the least extreme signals. Ties are broken by ascending PERMNO. A stock whose
+filter characteristic is missing at $t$ (only `RealizedVol`, about 0.3% of
+$U_t$) is not eligible for removal: the $k$ removals are taken among the
+stocks with a finite value, and their count is reported. Every filter
+variable is known at formation.
+
+*Returns and missing outcomes.* Holdings, filters and the equal weights are
+fixed at $t$, before any $t + 1$ return is observed. The leg statistic is
+the equal-weight mean of `ret_next` over the selected holdings whose
+`ret_next` is finite; the long–short statistic is the difference of the two
+leg means. This is a conditional observed-outcome comparison of selection
+rules, not the return of an implementable fixed-weight portfolio: a holding
+without a finite `ret_next` contributes no return, the leg's coverage (share
+of selected holdings with a finite `ret_next`) is recorded, and the
+statistic estimates the rule's mean next-month return without bias only if
+returns are missing at random within the leg. Non-random missingness, such
+as a delisting without a CRSP delisting return, can bias the comparison
+even though the procedure is pre-specified; the coverage differences below
+are the disclosed measure of that risk. Missing returns are never imputed
+or set to zero. A complete-case calendar-month rule, keeping only months in
+which every holding has a return, is not used: with 170 to 320 holdings per
+leg it would discard most months and retain a selected set of them.
+
+*Months and disclosure.* A month enters the H4 series if every leg of every
+variant and intensity has at least 20 holdings with a finite `ret_next`; all
+variants are evaluated on this common set of months, whose size is reported.
+Coverage is disclosed per month, leg and variant (mean, minimum, months below
+0.95) together with the coverage difference between each filter and no
+filter; a coverage difference is a stated limitation of the comparison.
+
+*Statistics.* For each variant, the mean long–short return with the HAC
+standard error of "Fama–MacBeth inference" ($L = 6$, normal interval) and
+the annualised Sharpe ratio (mean over population standard deviation times
+$\sqrt{12}$, descriptive). For each filter, the paired monthly difference
+against no filter, with HAC mean and interval, two-sided at 5%. These
+comparisons are descriptive and unadjusted for their number (three filters
+at three intensities); no expected ranking, no superiority claim and no test
+on Sharpe differences.

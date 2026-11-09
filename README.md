@@ -11,6 +11,9 @@ lower out-of-sample forecast reliability
 beyond signal strength and observable risk, and whether that information has
 economic value.
 
-> **Status:** the formation-time data pipeline is implemented and validated
-> ([docs/data_pipeline.md](docs/data_pipeline.md)). The repository contains no
-> licensed data, models or empirical results.
+> **Status:** the data pipeline, the walk-forward forecasts, the signals,
+> the disagreement measures and the H2 controls are implemented and tested on
+> synthetic data; the pre-analysis protocol is frozen
+> ([docs/pre_analysis_plan.md](docs/pre_analysis_plan.md)). The estimation
+> engine is not yet implemented and no empirical result has been examined.
+> The repository contains no licensed data, models or empirical results.

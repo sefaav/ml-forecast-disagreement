@@ -2,7 +2,9 @@
 
 These hypotheses are specified before any empirical results are produced. No
 return-based results exist yet. Amendments made before any return is examined
-are recorded in [methodology_changes.md](methodology_changes.md).
+are recorded in [methodology_changes.md](methodology_changes.md); the
+estimation protocol was frozen on 2026-11-09
+([pre_analysis_plan.md](pre_analysis_plan.md), "Estimation protocol").
 
 H1 and H2 are the primary contribution. H3 is a secondary
 mechanism/decomposition analysis, and H4 is a secondary economic application.
@@ -31,10 +33,12 @@ mechanism/decomposition analysis, and H4 is a secondary economic application.
 - **Centered ensemble signal $S^c$:** $S^c = 2(S - 0.5) \in [-1, 1]$.
 - **Signal strength (signal extremity):** $|S^c|$. $S$ and $S^c$ are signal
   levels; only $|S^c|$ is referred to as signal strength.
-- **Conditioning bins:** 20 monthly quantile bins of the ensemble signal level
-  $S$ (equivalently of $S^c$, since centering is monotone), not of $|S^c|$.
-- **Raw between-family disagreement:** the standard deviation across family
-  ranks.
+- **Conditioning bins:** 20 monthly rank-based bins of the ensemble signal
+  level $S$ (equivalently of $S^c$, since centering is monotone), not of
+  $|S^c|$; exact formula in [pre_analysis_plan.md](pre_analysis_plan.md),
+  "Conditional disagreement".
+- **Raw between-family disagreement:** the population standard deviation
+  (ddof = 0) of the four family ranks.
 - **Conditional between-family disagreement (primary measure):** raw
   between-family disagreement ranked within the 20 monthly conditioning bins
   of $S$. This addresses the mechanical constraint on disagreement at high
@@ -44,11 +48,12 @@ mechanism/decomposition analysis, and H4 is a secondary economic application.
   averaged across families, and then conditioned on the ensemble signal level
   $S$.
 - **Forecast reliability:** the strength of the relationship between the
-  ensemble signal and subsequent returns.
-  [TODO: the statistic that measures the strength of this relationship,
-  including the return variable used in evaluation; the Fama–MacBeth
-  inference implementation and the exact HAC/Newey-West lag; the policy for
-  observations without an outcome.]
+  ensemble signal and the next-month outcome, measured by the signal slope
+  of the H1 specification.
+- **Evaluation outcome:** `target_rank`, the cross-sectional rank of the
+  next-month return `ret_next` within $U_t$ mapped to $[-1, 1]$ (primary);
+  raw `ret_next` (robustness). Estimation, inference and reporting rules:
+  [pre_analysis_plan.md](pre_analysis_plan.md), "Estimation protocol".
 - **H2 control characteristics:** size, realized volatility and illiquidity,
   defined in [pre_analysis_plan.md](pre_analysis_plan.md), "H2 control
   characteristics", each transformed separately into a monthly
@@ -67,20 +72,21 @@ The primary H1 reliability specification is estimated separately in each OOS
 formation month $t$, in a Fama–MacBeth framework:
 
 $$
-r_{i,t+1} = \alpha_{t,b(i,t)} + \gamma_{t,b(i,t)}\,S^c_{i,t}
+y_{i,t+1} = \alpha_{t,b(i,t)} + \gamma_{t,b(i,t)}\,S^c_{i,t}
 + \eta_{t,b(i,t)}\,(S^c_{i,t})^2 + \beta_{2,t}\,CD^B_{i,t}
 + \beta_{3,t}\,(S^c_{i,t} \times CD^B_{i,t}) + \varepsilon_{i,t+1}
 $$
 
-where $S^c = 2(S - 0.5)$ uses the original, non-re-ranked ensemble signal,
-$b(i,t)$ is the stock's existing monthly signal bin among the 20 conditioning
-bins, and $CD^B$ is the existing conditional between-family disagreement. The
-intercept and the linear and quadratic signal terms are specific to each
-(month, signal bin); the disagreement level and the signal × disagreement
-interaction are common to the month's cross-section. The primary coefficient
-of interest, $\beta_{\text{interaction}}$, is the Fama–MacBeth average of the
-monthly $\beta_{3,t}$ (estimation details: see the forecast-reliability TODO
-above).
+where $y_{i,t+1}$ is the evaluation outcome, $S^c = 2(S - 0.5)$ uses the
+original, non-re-ranked ensemble signal, $b(i,t)$ is the stock's existing
+monthly signal bin among the 20 conditioning bins, and $CD^B$ is the
+existing conditional between-family disagreement. The intercept and the
+linear and quadratic signal terms are specific to each (month, signal bin);
+the disagreement level and the signal × disagreement interaction are common
+to the month's cross-section. The primary coefficient of interest,
+$\beta_{\text{interaction}}$, is the Fama–MacBeth average of the monthly
+$\beta_{3,t}$ (estimation and inference: pre-analysis plan, "Estimation
+protocol").
 
 The mechanical-bias diagnostics ([pre_analysis_plan.md](pre_analysis_plan.md),
 "Signal controls in the H1 specification") found that, inside the extreme
@@ -108,6 +114,17 @@ The economic hypothesis is directional, but statistical inference is two-sided.
 A statistically significant positive interaction will be reported as evidence
 in the opposite direction, not discarded.
 
+**Verdict.** Two-sided test at the 5% level on the Fama–MacBeth average of
+$\beta_{3,t}$, with the HAC inference of the pre-analysis plan. H1 is
+"supported" if the estimate is negative and $p < 0.05$, "evidence in the
+opposite direction" if it is positive and $p < 0.05$, and "inconclusive"
+otherwise; the 95% interval is reported in every case. A negative
+interaction is a statistical statement about the signal slope. The economic
+reading that a positively informative signal becomes less reliable where
+disagreement is higher is claimed only if, in addition, the average signal
+slope at low disagreement ($CD^B = 0.1$) is significantly positive
+(pre-analysis plan, "Reporting rules for H1 and H2").
+
 H1 concerns the signal–return relationship, not the level of returns.
 
 **Pre-specified H1 robustness**
@@ -120,6 +137,9 @@ H1 concerns the signal–return relationship, not the level of returns.
   produced constant cross-sectional forecasts (see the pre-analysis plan). The
   baseline sample, the four-family ensemble and the construction of $CD^B$ and
   $CW$ are unchanged; the exclusion is a robustness analysis only.
+- *Other pre-specified robustness analyses* (raw outcome, raw and range
+  disagreement measures, 10 bins, leave-one-family-out, HAC lags, two
+  subperiods): pre-analysis plan, "Robustness and subperiods".
 
 ### H2: Incremental information
 
@@ -161,14 +181,20 @@ not causal identification or complete risk adjustment.
 Within-family estimation uncertainty is not part of the H2 control set. Its
 relation to between-family disagreement is examined in H3.
 
-H2 is estimated on the formation observations of $U_t$ for which all three
-characteristics are available, without imputation; $U_t$, $S$, $CD^B$, $CW$
-and the signal bins are never recomputed on that subsample. The primary H1
-test keeps its own sample; specification C is additionally re-estimated on
-the exact H2 estimation sample so that coefficient changes can be told apart
-from sample-composition changes. The return variable, the Fama–MacBeth
-inference and the policy for observations without an outcome are still to be
-fixed (see the forecast-reliability TODO above).
+H2 is estimated on the complete-case subsample without imputation; the
+sample rules, the re-estimation of specification C on the exact H2 sample
+and the inference are fixed in the pre-analysis plan, "Estimation
+protocol".
+
+**Verdict.** H1 and H2 form a fixed-sequence pair: H2 is confirmatory only
+if H1 is supported in the negative direction, which keeps the familywise
+error of the pair at 5% without correction. H2 "survives" if its
+interaction estimate is negative with $p < 0.05$ and "does not survive"
+otherwise. H2 is estimated and fully reported whatever the H1 verdict, and
+labelled descriptive when the gate is not passed. The paired differences
+between specification C on the H2 sample, H2 and H1 are reported with
+intervals and are not interpreted causally (pre-analysis plan, "Reporting
+rules for H1 and H2").
 
 ## Secondary analysis
 
@@ -197,26 +223,42 @@ analysis.
   interaction coefficients does not by itself establish which uncertainty
   concept is more informative: the measures are built from different numbers
   of components and different ranking operations.
-- H3 remains secondary because both measures contain finite-model measurement
-  noise: four families for between-family disagreement and K = 5 replicas per
-  family for within-family estimation uncertainty. The two measures may be
-  estimated with different precision, so any comparison between them must take
-  this noise into account. An analysis-of-variance correction that treats
-  within-family dispersion as independent sampling noise is not a required
-  analysis: for a given replica the four families share the same bootstrap
-  month draws, and $CD^B$ and $CW$ use different ranking operations.
-  [TODO: how measurement noise will be addressed; literature reference needed.]
+- Both measures contain finite-model noise (four families for $CD^B$,
+  K = 5 replicas per family for $CW$) and both are bounded ranks, so their
+  errors are neither additive nor independent of the level: classical
+  attenuation results do not apply, no ordering of their measurement
+  precision is asserted, and no measurement-error correction or
+  replica-split reliability diagnostic is performed. An analysis-of-variance
+  correction treating within-family dispersion as independent sampling noise
+  is not appropriate either: for a given replica the four families share the
+  same bootstrap month draws, and $CD^B$ and $CW$ use different ranking
+  operations.
+- *Test:* each interaction is tested two-sided at 5%; "distinct information"
+  requires both to reject (intersection–union test, level 5% without
+  correction), and the joint Wald test of the two interactions is reported
+  as a complement. H3 is outside the H1 → H2 sequence.
 
 ## Secondary economic application
 
 ### H4: Disagreement-based filter
 
-A disagreement-based filter will later be compared with:
+A pre-specified secondary comparison of selection rules on gross one-month
+returns: holdings are fixed at formation and the statistic averages the
+observed returns of the selected holdings, so it is a conditional
+observed-outcome comparison, not an implementable fixed-weight portfolio
+backtest. In each OOS formation month,
+long–short portfolios are formed from the extreme signal deciles of $U_t$
+with equal weights fixed at formation, and a fraction $\varphi = 1/3$ of
+each leg is removed by one of three filters applied at equal intensity:
 
-- no filter;
-- a volatility filter;
-- a signal-extremity filter.
+- disagreement filter: the stocks with the highest conditional
+  between-family disagreement $CD^B$;
+- volatility filter: the stocks with the highest realized volatility;
+- signal-extremity filter: the stocks with the lowest signal extremity
+  $|S^c|$.
 
-No expected ranking of these alternatives is specified. This analysis is not
-performed at this stage.
-[TODO: filter construction, portfolio formation and evaluation criteria.]
+The unfiltered portfolio is the benchmark. Each filter is compared with no
+filter on identical months through paired monthly return differences,
+two-sided at 5%. No expected ranking of the alternatives is specified and no
+superiority claim will be made. Construction, missing-return policy,
+coverage disclosure and statistics: pre-analysis plan, "H4".

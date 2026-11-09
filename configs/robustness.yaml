@@ -1,1 +1,3 @@
-# TODO: Robustness specifications, to be defined in a later step.
+# Robustness analyses are frozen in docs/pre_analysis_plan.md, "Robustness
+# and subperiods". They are computed by the estimation engine from the
+# baseline outputs (configs/baseline.yaml) and need no separate configuration.

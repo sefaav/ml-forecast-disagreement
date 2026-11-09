@@ -38,7 +38,8 @@ Signal level and signal strength are distinct; see
   signal strength. A naive analysis could confuse disagreement with signal
   strength.
 - Disagreement may also partly reflect simple stock characteristics such as
-  volatility, size or illiquidity [TODO: literature reference needed].
+  volatility, size or illiquidity; H2 conditions on them
+  ([hypotheses.md](hypotheses.md)).
 
 ## Proposed contribution
 

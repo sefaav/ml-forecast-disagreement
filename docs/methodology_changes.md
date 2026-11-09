@@ -169,3 +169,83 @@ is taken as the reference; the controls overlap with the model predictors by
 design. The panel's `Size` predictor (OSAP `mve_c`, PERMNO-level from the
 legacy monthly file, master-table step not verified) is not treated as
 identical to the CIZ `mktcap` and is not used.
+
+## 2026-11-09 — Estimation protocol, decision rules, H3 and H4; plan frozen
+
+**Status.** Pre-results amendment, taken after the two entries above; it
+closes every item they listed as open. The pre-analysis plan is frozen for
+H1–H4. What remains is implementation: the diagnostic module of
+"Reproducibility of the evidence" and the estimation engine, both built and
+tested on synthetic data before the first regression on real outcomes, and a
+supervision checkpoint to be recorded here.
+
+**Evidence used.** Outcome-free design diagnostics on the saved regressors
+over the 480 OOS months (cell counts, condition numbers of the raw and
+bin-local bases, variance inflation and identifying variance of
+$S^c \times CD^B$ with and without the H2 controls, monthly correlation of
+$CD^B$ and $CW$), a synthetic-outcome check that both bases give the same
+$\beta_3$, the saved H2-control coverage and the econometric literature. No
+return, target or H1–H4 result was inspected. The diagnostics were produced
+by temporary scripts and are recorded figures, to be reproduced by the
+diagnostic module.
+
+**Decisions** (full statement: [pre_analysis_plan.md](pre_analysis_plan.md),
+"Estimation protocol").
+
+- Primary evaluation outcome `target_rank`, raw `ret_next` as robustness:
+  the question concerns the reliability of the ordering, the scale is the
+  same every month and extreme returns do not dominate monthly coefficients;
+  the raw return keeps the economic magnitude.
+- Equal-weighted monthly OLS and Fama–MacBeth averages; bin-local
+  polynomial basis with the column space of specification C (condition
+  number about 4 against about $4 \times 10^3$).
+- HAC: Bartlett kernel, 6 calendar months, normalisation $1/T$, no
+  finite-sample correction, standard normal inference; lags 0 and 12 as
+  sensitivity. A fixed lag was preferred to a data-dependent bandwidth so
+  that the standard error does not depend on the realised coefficient
+  series; fixed-$b$ inference and Student critical values were not adopted.
+- Month estimability (30 observations and 3 distinct $S^c$ per cell, scaled
+  $\sigma_{\min} / \sigma_{\max} > 10^{-8}$), calendar-aware HAC with
+  missing months, paired comparisons on common months.
+- Missing outcomes excluded month by month; $U_t$, signals, bins, controls
+  and `target_rank` never recomputed; H2 sample = H1 sample ∩ complete
+  case; specification C always re-estimated on the H2 sample.
+- Fixed-sequence H1 → H2 at 5%, two-sided, with verdict categories; paired
+  differences with intervals and no causal wording; marginal slopes at
+  $CD^B \in \{0.1, 0.5, 0.9\}$; statistical and economic statements kept
+  apart.
+- Robustness set and subperiods 1985–2004 / 2005–2024 fixed.
+- H3: intersection–union test of the two interactions, joint Wald test as a
+  complement, no measurement-error correction or replica-split diagnostic
+  (closes the H3 TODO).
+- H4 frozen: extreme-decile long–short, equal weights fixed at formation,
+  one-month holding, $\varphi = 1/3$ (0.2 and 0.5 as sensitivity), three
+  filters at equal intensity with a PERMNO tie-break, missing filter
+  characteristic not eligible for removal, leg statistic = mean `ret_next`
+  over holdings with an observed return (no imputation, no zero return, no
+  implementable-backtest claim), common months across variants, coverage
+  disclosed, gross returns, paired HAC differences (closes the H4 TODO). A
+  complete-case calendar-month rule was rejected because it would discard
+  most months and retain a selected set of them.
+
+**Reproducibility.** The pre-analysis plan now separates deterministic
+forecast-only diagnostics, expected to reproduce the recorded figures, from
+the synthetic-outcome experiments, whose code was lost and which can only be
+rerun under a newly documented implementation and reported as a dated rerun.
+
+**Documents synchronised.** [hypotheses.md](hypotheses.md) (evaluation
+outcome, verdicts, H3 and H4, TODOs removed), the pre-analysis plan
+("Estimation protocol" added, "Estimation details still to be fixed"
+removed, reproducibility section revised) and
+[research_proposal.md](research_proposal.md) (H4 and design wording).
+
+**Final clarifications before freezing (same date, no change of
+substance).** The pre-analysis plan's model-selection steps now describe
+the implemented forecasting (OOS forecasts from the five bootstrap
+replicas, no un-resampled refit); the bin-local basis constants are fixed
+from the full $U_t$ of each cell; H2 marginal slopes are evaluated at
+$X^c = 0$ (primary) and at the complete-case means (descriptive); H4 is
+labelled a conditional observed-outcome comparison with its missingness
+caveat; robustness analyses apply to H1 only and the H4 comparisons are
+unadjusted; the reproducibility checkpoint states what blocks the outcome
+analysis.

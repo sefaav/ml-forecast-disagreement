@@ -66,8 +66,9 @@ bounded prediction ranks, signal extremity, and measured disagreement.
 - **H3 (secondary):** examines whether between-family disagreement and
   within-family estimation uncertainty capture distinct information about
   forecast reliability; both are measured with noise.
-- **H4 (secondary):** a disagreement filter will later be compared with no
-  filter, a volatility filter and a signal-extremity filter.
+- **H4 (secondary):** a pre-specified disagreement filter is compared with
+  no filter, a volatility filter and a signal-extremity filter on gross
+  one-month long–short returns, without an expected ranking.
 
 # Proposed Empirical Design
 
@@ -88,9 +89,9 @@ extreme bins, the H1 regression controls for the signal within each bin with
 bin-specific linear and quadratic terms rather than with global
 signal-strength controls. Within-family estimation uncertainty is
 constructed from replica-rank dispersion, computed separately within each model
-family. Given the design sensitivity documented by Chen et al. (2026),
-remaining implementation choices will be pre-specified before any empirical
-results are examined.
+family. Given the design sensitivity documented by Chen et al. (2026), the
+estimation and inference choices were pre-specified in the pre-analysis plan
+before any empirical result was examined.
 
 # Expected Contribution
 

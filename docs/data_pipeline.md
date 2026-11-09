@@ -2,7 +2,10 @@
 
 The data pipeline builds a monthly, formation-time data layer: the investable
 universe $U_t$ from CRSP and a panel of candidate predictors for its members.
-It contains no future return and no prediction target.
+The `build` outputs contain no future return. The prediction target
+(`ret_next`, `target_rank`) is built separately by
+`python -m disagreement.data target` from the universe and the CRSP extract
+([pre_analysis_plan.md](pre_analysis_plan.md), "Prediction target").
 
 Code: `src/disagreement/data/`. Commands and local files:
 [data/README.md](../data/README.md). Data rules:
@@ -89,6 +92,7 @@ From the repository root, with the environment pinned in
 ```
 .venv\Scripts\python -m disagreement.data crsp-extract   # CRSP fields from WRDS
 .venv\Scripts\python -m disagreement.data build          # universe, panel, validation
+.venv\Scripts\python -m disagreement.data target         # next-month return and ranked target
 .venv\Scripts\python -m pytest                           # synthetic tests
 ```
 
