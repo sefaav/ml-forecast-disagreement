@@ -77,6 +77,10 @@ class DataPaths:
     def mechanical_bias_diagnostics(self) -> Path:
         return self.root / "diagnostics" / "mechanical_bias"
 
+    @property
+    def design_evidence_diagnostics(self) -> Path:
+        return self.root / "diagnostics" / "design_evidence"
+
 
 @dataclass(frozen=True)
 class DataConfig:

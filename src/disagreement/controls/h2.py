@@ -44,7 +44,7 @@ from disagreement.data.config import DEFAULT_CONFIG, DEFAULT_DATA_DIR, DataPaths
 from disagreement.data.universe import UNIVERSE_COLUMNS
 from disagreement.data.validation import KEY, DataValidationError, require_unique_keys
 from disagreement.signals import conditional
-from disagreement.signals.family import unit_rank
+from disagreement.signals.family import remove_design_evidence, unit_rank
 from disagreement.walkforward.calendar import baseline_episodes, month_range
 
 CONTROLS = ("size", "realized_volatility", "illiquidity")
@@ -245,6 +245,7 @@ def run_h2_controls(
     summaries = []
     for oos_year in baseline_years:
         (paths.h2_controls / f"{oos_year}.json").unlink(missing_ok=True)  # not complete until rewritten
+        remove_design_evidence(paths)  # built from every year's controls
         out = h2_controls(load_inputs(paths, oos_year))
         metadata = {
             "oos_year": oos_year,

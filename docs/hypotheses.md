@@ -7,7 +7,8 @@ estimation protocol was frozen on 2026-11-09
 ([pre_analysis_plan.md](pre_analysis_plan.md), "Estimation protocol").
 
 H1 and H2 are the primary contribution. H3 is a secondary
-mechanism/decomposition analysis, and H4 is a secondary economic application.
+mechanism/decomposition analysis, and H4 is a secondary descriptive
+comparison of selection rules.
 
 ## Definitions and fixed design choices
 
@@ -246,10 +247,11 @@ A pre-specified secondary comparison of selection rules on gross one-month
 returns: holdings are fixed at formation and the statistic averages the
 observed returns of the selected holdings, so it is a conditional
 observed-outcome comparison, not an implementable fixed-weight portfolio
-backtest. In each OOS formation month,
-long–short portfolios are formed from the extreme signal deciles of $U_t$
-with equal weights fixed at formation, and a fraction $\varphi = 1/3$ of
-each leg is removed by one of three filters applied at equal intensity:
+backtest, and no claim of economic value is made. In each OOS formation
+month, a long leg and a short leg are formed from the extreme signal deciles
+of $U_t$ with equal weights fixed at formation, and a fraction
+$\varphi = 1/3$ of each leg is removed by one of three filters applied at
+equal intensity:
 
 - disagreement filter: the stocks with the highest conditional
   between-family disagreement $CD^B$;

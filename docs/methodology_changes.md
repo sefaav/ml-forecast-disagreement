@@ -249,3 +249,72 @@ labelled a conditional observed-outcome comparison with its missingness
 caveat; robustness analyses apply to H1 only and the H4 comparisons are
 unadjusted; the reproducibility checkpoint states what blocks the outcome
 analysis.
+
+## 2026-11-09 — Reproducibility module run; recorded evidence verified
+
+**Evidence used.** The committed module
+`disagreement.diagnostics.design_evidence`, run on the saved signals, H2
+controls and model-selection metadata of the 480 baseline months
+([pre_analysis_plan.md](pre_analysis_plan.md), "Reproducibility of the
+evidence"); no return, target or H1–H4 result was read.
+
+**Deterministic checks.** Every recorded forecast-only figure of "Signal
+controls in the H1 specification" reproduced within tolerance, except two
+coarse summaries: "about −0.65" for the partialled interaction
+correlations of A and D in bins 1 and 20 (four cells, −0.646 to −0.659) and
+"about ±0.67 in 2020 and 2022" (+0.670/−0.694 and +0.682/−0.644). Both are
+recording precision, descriptive, and bore on no decision; the 2021
+reversal and the three-family comparison reproduced to three decimals. The
+checkpoint is closed: the recorded figures stand as recorded and the
+module's values are the verified reference.
+
+**Clarifications, no change of substance.** (i) The two-step specification
+E is identical to C only when $CD^B$ is demeaned or linearly detrended
+within the cell and the detrended level term is kept; detrending on C's
+quadratic controls is not identical to C (a cubic term leaves the span).
+The earlier statement is correct under the linear reading, now written in
+the plan; C itself does not depend on E. (ii) B's partialled interaction
+keeps a 5–6% within-bin signal-variance share in the extreme bins (noise
+floor 2%), consistent with its stress-scenario bias; C's share is exactly 0.
+
+**Synthetic reruns.** New simulations, not reproductions: boundary scenario
+A 17.3%, B 4.0%, C 4.3%, D 18.7% (Monte-Carlo standard errors 1.1–2.2
+points), consistent with the recorded 18.3%, 5.7%, 5.3% and 20.7% and with
+the qualitative expectation. No amendment of the frozen design follows.
+
+## 2026-11-10 — Targeted corrections before the pre-analysis push
+
+Documentation, provenance and diagnostics only; the H1–H4 specifications,
+decision rules and robustness table are unchanged. No return, target or
+H1–H4 result was read.
+
+- **Provenance and guards.** `design_evidence` now records the SHA-256 of
+  every file it reads (conditional disagreement and H2 controls with their
+  sidecars, model-selection metadata, ensemble signals, the raw predictions
+  of a constant family-year) and of the configuration; an interaction
+  collinear with its controls is rejected instead of producing unbounded
+  weights; metadata without a selected score is rejected cleanly.
+- **Checkpoint status.** The five figures outside their tolerance (the
+  coarse "about −0.65" and "about ±0.67" summaries of the 2026-11-09 entry)
+  are listed by the module as resolved discrepancies, with their recorded
+  values and tolerances unchanged; each carries its reconstructed value
+  (verified on 2026-11-09) and is resolved only if reproduced within
+  0.0005. The checkpoint fails closed: a fixed list of expected checks must
+  all be computed, and a missing, undefined or materially changed value is
+  an unresolved failure that blocks it. On the saved signals: five resolved,
+  none unresolved, checkpoint passed.
+- **Diagnostics completed.** The monthly correlation of $CD^B$ and $CW$ and
+  the identifying variance of $S^c \times CD^B$ with and without the H2
+  controls, cited above as recorded evidence, are now computed by the module
+  (−0.017; 96.5% retained, variance inflation 1.04).
+- **Coverage diagnostic.** A descriptive outcome-coverage table by signal
+  bin and within-cell $CD^B$ tercile is pre-specified in "Estimation
+  protocol" and implemented in `disagreement.inference.coverage` (tested on
+  synthetic data, not run); it changes no sample, estimation or inference.
+- **Wording.** H4 states the intended $1/n_{\mathrm{leg}}$ weights against
+  the observed-holdings statistic and claims no economic value; the
+  synthetic scenarios' limitations (kink at bin edges, stress term in C's
+  basis, uncalibrated noise) are documented; the precision of $\bar g$
+  relative to across-bin contrasts is noted without changing the rule.
+- **Bibliography.** Bali et al.: RFS, published 21 April 2026; Chen,
+  Hanauer and Kalsbach: SSRN revision of 23 October 2026.

@@ -122,6 +122,7 @@ def build_targets(paths: DataPaths, cfg: DataConfig) -> dict:
         paths.conditional_disagreement,
         paths.h2_controls,
         paths.mechanical_bias_diagnostics,
+        paths.design_evidence_diagnostics,
     )
     for stale in (paths.oos_predictions, *signals):  # from the replaced targets
         if stale.exists():

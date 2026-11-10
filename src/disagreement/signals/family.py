@@ -107,9 +107,16 @@ def remove_mechanical_bias_diagnostics(paths: DataPaths) -> None:
         shutil.rmtree(paths.mechanical_bias_diagnostics)
 
 
+def remove_design_evidence(paths: DataPaths) -> None:
+    """The aggregate design-evidence diagnostics, stale once any conditional-disagreement or H2-control year changes."""
+    if paths.design_evidence_diagnostics.exists():
+        shutil.rmtree(paths.design_evidence_diagnostics)
+
+
 def remove_h2_controls(paths: DataPaths, oos_year: int) -> None:
     """The H2 controls of this OOS year, stale once the universe, the panel or the conditional disagreement changes."""
     _remove_year(paths.h2_controls, oos_year)
+    remove_design_evidence(paths)
 
 
 def remove_conditional_disagreement(paths: DataPaths, oos_year: int) -> None:

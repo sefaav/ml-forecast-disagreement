@@ -36,6 +36,7 @@ python -m venv .venv
 .venv\Scripts\python -m disagreement.signals.conditional [--year Y]                # both ranked within 20 signal bins
 .venv\Scripts\python -m disagreement.controls.h2 [--year Y]                        # H2 controls as monthly centred ranks
 .venv\Scripts\python -m disagreement.diagnostics.mechanical_bias                   # descriptive, all OOS years
+.venv\Scripts\python -m disagreement.diagnostics.design_evidence                   # H1 design evidence, all OOS years
 .venv\Scripts\python -m pytest                           # synthetic tests
 ```
 
@@ -59,8 +60,10 @@ disagreement, since the within-family uncertainty is computed from the family
 signals; the between-family disagreement and the within-family uncertainty
 each remove the conditional disagreement. Removing or rerunning any
 conditional-disagreement year removes that year's H2 controls and the whole
-`diagnostics/mechanical_bias/` directory, which describes all OOS years at
-once; `build`, `crsp-extract` and a successful `target` run remove both too.
+`diagnostics/mechanical_bias/` and `diagnostics/design_evidence/`
+directories, which describe all OOS years at once; rerunning any H2-controls
+year removes `diagnostics/design_evidence/`; `build`, `crsp-extract` and a
+successful `target` run remove all three.
 The H2 controls also record the SHA-256 of their three input files and of
 their own output file; their loader rejects a year whose inputs or output
 changed after it was built. The ensemble is the plain mean of
@@ -89,6 +92,7 @@ data/
     h2_controls/                  size, volatility and illiquidity ranks, one file per OOS year
   diagnostics/                    summary.json, universe_by_month.csv
     mechanical_bias/              monthly and signal-bin correlations, summary.json
+    design_evidence/              H1 design diagnostics and synthetic reruns, summary.json
 ```
 
 ## Successful run

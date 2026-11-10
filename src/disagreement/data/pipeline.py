@@ -189,7 +189,7 @@ def remove_derived_outputs(paths: DataPaths) -> None:
     derived = (
         paths.universe, paths.panel, paths.target, paths.oos_predictions, paths.family_signals, paths.ensemble_signals,
         paths.between_family_disagreement, paths.within_family_uncertainty, paths.conditional_disagreement,
-        paths.h2_controls, paths.mechanical_bias_diagnostics,
+        paths.h2_controls, paths.mechanical_bias_diagnostics, paths.design_evidence_diagnostics,
     )
     for directory in derived:
         if directory.exists():
