@@ -318,3 +318,29 @@ H1–H4 result was read.
   relative to across-bin contrasts is noted without changing the rule.
 - **Bibliography.** Bali et al.: RFS, published 21 April 2026; Chen,
   Hanauer and Kalsbach: SSRN revision of 23 October 2026.
+
+## 2026-11-10 — Pre-results amendments: MAD robustness; H4 backtesting extension
+
+Documentation only, before any estimation; no return, target or H1–H4
+result examined. Primary specifications and decision rules unchanged.
+
+- **MAD measure.** The H1 robustness table gains the mean absolute deviation
+  of the four family ranks around their mean $S$,
+  $D^{B,\mathrm{MAD}} = \tfrac{1}{4} \sum_m \lvert F^m - S \rvert$, ranked
+  within the same (month, bin) cells with the convention of $CD^B$ and used
+  in place of $CD^B$; descriptive, like the range measure, which is kept.
+- **H4 backtesting extension.** A separate secondary extension is
+  pre-specified in the plan ("H4"): fixed-at-formation equal weights never
+  renormalised, monthly turnover and proportional one-way costs
+  $\{10, 25, 50\}$ bp, annual borrowing fee $\{0, 1, 2\}\%$ on the short
+  leg, gross and net mean, volatility, Sharpe ratio, maximum drawdown and
+  turnover with both notionals set to the current wealth at each rebalance
+  (gross leverage 2, trading cost $2\,c\,TO_t$ per leg, compounding stopped
+  if wealth reaches zero, financing and collateral remuneration excluded),
+  missing $t + 1$ returns replaced by 0% and −100% as sensitivity scenarios
+  (not bounds). The signal is known
+  only at the close of $t$ and the data hold month-end closes and no
+  transaction-cost or lending data, so the extension is a hypothetical
+  close-to-close cost-sensitivity analysis, not an executable strategy,
+  kept apart from the H4 comparison and from every verdict. Neither
+  analysis is implemented yet.

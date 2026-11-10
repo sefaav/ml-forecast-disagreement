@@ -1088,6 +1088,7 @@ primary verdict.
 | Raw outcome | `ret_next` in place of `target_rank` |
 | Raw disagreement | $D^{B,\mathrm{raw}}$ in place of $CD^B$, same controls |
 | Range measure | max − min of the four family ranks, ranked within the same (month, bin) cells, in place of $CD^B$ |
+| MAD measure | $D^{B,\mathrm{MAD}}_{i,t} = \tfrac{1}{4} \sum_{m=1}^{4} \lvert F^m_{i,t} - S_{i,t} \rvert$, the mean absolute deviation of the four family ranks $F^m$ around their mean $S$, ranked within the same (month, bin) cells with the convention of $CD^B$ (average ranks, $[0, 1]$, 0.5 for a single stock or a constant cell), in place of $CD^B$; $S$, the bins, the controls and the inference are unchanged |
 | 10 bins | $CD^B$, $CW$ and the bin-specific controls recomputed with 10 monthly bins of $S$ |
 | Leave one family out | four variants: $S$ and $D^{B,\mathrm{raw}}$ from the three remaining families, bins and $CD^B$ recomputed on that $S$ |
 | HAC lag | $L = 0$ and $L = 12$ |
@@ -1163,3 +1164,72 @@ against no filter, with HAC mean and interval, two-sided at 5%. These
 comparisons are descriptive and unadjusted for their number (three filters
 at three intensities); no expected ranking, no superiority claim and no test
 on Sharpe differences.
+
+*Secondary backtesting extension (pre-results amendment of 2026-11-10).*
+Separate from the comparison above, whose statistic is not a portfolio
+return, this extension asks whether the disagreement filter adds value net
+of assumed trading costs. It is descriptive, reported in its own table, and
+enters no H1–H4 verdict.
+
+- Portfolios: the unfiltered long–short (decile 10 minus decile 1) and the
+  disagreement-filtered one at $\varphi = 1/3$, the other filters as
+  comparators. Equal weights $1 / n_{\mathrm{leg}}$ fixed at the close of
+  formation month $t$, one unit of notional per leg (dollar neutral),
+  one-month holding, monthly rebalancing. The signal uses information
+  available only at that close, so a trade at the close of $t$ is not
+  executable: the close-to-close calculation on CRSP month-end prices is a
+  hypothetical economic sensitivity analysis, not an executable strategy.
+  An implementable version would need post-signal execution prices (for
+  example the next trading day's), which the monthly data do not hold.
+- Gross return: $\sum_i w_{i,t}\, r_{i,t+1}$ per leg with the weights fixed
+  at $t$, never renormalised; CIZ `MthRet` includes the delisting return
+  when CRSP has one. A holding without a finite `MthRet` in $t + 1$ is not
+  imputed from the sample: every result is reported under two substitution
+  scenarios for that holding's return, 0% and −100%. These are sensitivity
+  scenarios, not bounds: a short position's loss is unbounded and a
+  delisting without a CRSP return can take any value, so agreement across
+  the two scenarios is never read as a bounded result. The weight affected
+  is disclosed.
+- Capital convention: at each monthly rebalance the long and the short
+  notional are both set to the current wealth $W_t$, so the gross exposure
+  is $2 W_t$ and the gross leverage convention is 2 (with $W_0 = 1$, an
+  exposure of 2 at the start). The per-leg weights are normalised relative
+  to $W_t$, not fixed dollar amounts. The monthly long–short return,
+  relative to $W_t$, is the long-leg return minus the short-leg return
+  minus the trading costs of both legs and the borrowing fee;
+  compounding and the maximum drawdown use the hypothetical wealth
+  $W_{t+1} = W_t\,(1 + r^{LS}_{t+1})$ from $W_0 = 1$, and if $W$ reaches
+  zero or turns negative they stop at that month, which is reported with
+  its adverse return, never omitted or replaced. Financing and collateral
+  remuneration (interest on short-sale proceeds or on collateral) are
+  excluded and borrowing availability is not modelled, so the hypothetical
+  net returns may differ in either direction from implementable returns.
+- Turnover and costs: one-way turnover of a leg is
+  $\tfrac{1}{2} \sum_i \lvert w_{i,t} - \tilde w_{i,t-1} \rvert$, where
+  $w_{i,t}$ is the new weight ($1 / n_{\mathrm{leg}}$ or 0) and
+  $\tilde w_{i,t-1} = w_{i,t-1}(1 + r_{i,t}) / \sum_j w_{j,t-1}(1 + r_{j,t})$
+  is the previous weight after the month-$t$ returns, rescaled to the leg's
+  notional (0 for a stock not held). The rate $c \in \{10, 25, 50\}$ basis
+  points is a cost per unit of notional traded on either side, purchase or
+  sale, so a leg's trading cost in month $t$ is $2\,c\,TO_t$ (purchases and
+  sales each amount to $TO_t$ of the leg's notional); in the opening month
+  $\tilde w = 0$ for every stock, $TO_t = 1/2$ and the opening is charged
+  $c$ per leg. Both legs are charged in every month, and an annual
+  borrowing fee $f \in \{0, 1, 2\}\%$ is charged monthly ($f / 12$) on the
+  short leg's notional. These rates are assumptions: the data hold no
+  quoted spreads, trade prices or lending fees, and no security-level or
+  time-varying cost model is used.
+- Statistics, gross and net, over the 480 OOS months: mean monthly return,
+  volatility, annualised Sharpe ratio (mean over population standard
+  deviation times $\sqrt{12}$), maximum drawdown of the compounded
+  long–short return, average one-way turnover; the paired monthly
+  difference of net returns between the filtered and the unfiltered
+  portfolio with the HAC standard error of "Fama–MacBeth inference"
+  ($L = 6$, normal interval), descriptive and unadjusted.
+- Feasibility and limits: the extension is a cost-assumption sensitivity
+  analysis, not a measurement of implementation value. Not covered by the
+  data: transaction costs, borrowing fees and availability (hard-to-borrow
+  stocks, short-sale constraints), post-signal execution prices (only
+  month-end closes are held) and delisting reason codes. Results are stated
+  as "hypothetical close-to-close, net of assumed costs of $c$ and $f$" and
+  never as realised, executable or implementable performance.

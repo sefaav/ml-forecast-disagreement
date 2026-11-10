@@ -138,7 +138,7 @@ H1 concerns the signal–return relationship, not the level of returns.
   produced constant cross-sectional forecasts (see the pre-analysis plan). The
   baseline sample, the four-family ensemble and the construction of $CD^B$ and
   $CW$ are unchanged; the exclusion is a robustness analysis only.
-- *Other pre-specified robustness analyses* (raw outcome, raw and range
+- *Other pre-specified robustness analyses* (raw outcome, raw, range and MAD
   disagreement measures, 10 bins, leave-one-family-out, HAC lags, two
   subperiods): pre-analysis plan, "Robustness and subperiods".
 
@@ -263,4 +263,6 @@ The unfiltered portfolio is the benchmark. Each filter is compared with no
 filter on identical months through paired monthly return differences,
 two-sided at 5%. No expected ranking of the alternatives is specified and no
 superiority claim will be made. Construction, missing-return policy,
-coverage disclosure and statistics: pre-analysis plan, "H4".
+coverage disclosure and statistics: pre-analysis plan, "H4". A separate
+secondary backtesting extension with assumed trading costs is specified
+there; it does not enter the H4 comparison or any verdict.
