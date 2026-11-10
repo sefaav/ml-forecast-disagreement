@@ -12,9 +12,9 @@ signal and subsequent returns. The question is whether disagreement tells us
 *when* a given machine-learning signal is more or less informative. It does not
 ask whether disagreement predicts the level of returns.
 
-*Signal strength* refers to the extremity $|S^c|$ of the centered ensemble
-signal $S^c = 2(S - 0.5)$, where $S \in [0, 1]$ is the ensemble signal level.
-Signal level and signal strength are distinct; see
+*Signal strength* refers to the extremity $`|S^c|`$ of the centered ensemble
+signal $`S^c = 2(S - 0.5)`$, where $`S \in [0, 1]`$ is the ensemble signal
+level. Signal level and signal strength are distinct; see
 [hypotheses.md](hypotheses.md) for the definitions.
 
 - **Primary contribution (H1–H2):** whether between-family disagreement
@@ -48,9 +48,9 @@ Primary (H1–H2):
 1. Test whether disagreement identifies variation in forecast reliability,
    rather than directly predicting return levels.
 2. Explicitly address the mechanical relation between bounded family ranks,
-   signal strength $|S^c|$ and disagreement. The primary measure ranks
+   signal strength $`|S^c|`$ and disagreement. The primary measure ranks
    disagreement within 20 monthly quantile bins of the ensemble signal level
-   $S$ (not of $|S^c|$).
+   $`S`$ (not of $`|S^c|`$).
 3. Test whether disagreement contains information about signal reliability
    beyond simple observable stock-risk proxies.
 

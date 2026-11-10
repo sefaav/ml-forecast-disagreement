@@ -1,7 +1,7 @@
 # Data Pipeline
 
 The data pipeline builds a monthly, formation-time data layer: the investable
-universe $U_t$ from CRSP and a panel of candidate predictors for its members.
+universe $`U_t`$ from CRSP and a panel of candidate predictors for its members.
 The `build` outputs contain no future return. The prediction target
 (`ret_next`, `target_rank`) is built separately by
 `python -m disagreement.data target` from the universe and the CRSP extract
@@ -34,7 +34,7 @@ Both sources are keyed by CRSP PERMNO and the month `yyyymm`.
 
 ## Universe construction
 
-For each month $t$, using only the month-$t$ CRSP record, a security is
+For each month $`t`$, using only the month-$`t`$ CRSP record, a security is
 eligible if it is:
 
 1. a U.S. common stock: `ShareType = NS`, `SecurityType = EQTY`,
@@ -43,12 +43,12 @@ eligible if it is:
 2. listed on NYSE, AMEX or NASDAQ (`PrimaryExch` in `N`, `A`, `Q`), traded
    regular way (`ConditionalType = RW`) and active (`TradingStatusFlg = A`),
    the CIZ equivalent of legacy exchange codes 1, 2 and 3;
-3. still alive at the end of month $t$: excluded if its month-$t$ record has
+3. still alive at the end of month $`t`$: excluded if its month-$`t`$ record has
    `MthRetFlg = DE` or a delisting flag `MthDelFlg` of `A`, `P`, `V`, `G` or
    `M`, whether or not the delisting return is included in `MthRet`;
 4. priced with a finite, positive market capitalisation `MthCap`.
 
-$U_t$ keeps the eligible NYSE, AMEX and NASDAQ stocks whose `MthCap` is at or
+$`U_t`$ keeps the eligible NYSE, AMEX and NASDAQ stocks whose `MthCap` is at or
 above the 20th percentile of `MthCap` among eligible NYSE stocks in the same
 month (security-level market capitalisation, linear interpolation; a stock
 exactly at the breakpoint is kept). A month without eligible NYSE stocks has
@@ -56,20 +56,20 @@ no breakpoint and fails the build.
 
 ## Predictor panel
 
-The panel is a left join from $U_t$ on PERMNO-month: every member keeps one
+The panel is a left join from $`U_t`$ on PERMNO-month: every member keeps one
 row, with or without an OSAP record. It holds 212 candidate predictors
 before any coverage filtering: the 209 OSAP characteristics and the three
 predictors that OSAP leaves to be built from CRSP. These follow OSAP's own
 code (CrossSection v2) and its sign convention (sign -1 for all three), using
-the month-$t$ CIZ record:
+the month-$`t`$ CIZ record:
 
 | Predictor | OSAP definition | Stored value |
 |---|---|---|
-| Price | $\ln\lvert prc\rvert$ | $-\ln\lvert \text{MthPrc}\rvert$ |
-| Size | $\ln(\lvert prc\rvert \times shrout)$, per PERMNO | $-\ln(\text{MthCap})$ |
-| STreversal | month return in percent, missing set to 0 | $-100 \times \text{MthRet}$, missing set to 0 |
+| Price | $`\ln\lvert prc\rvert`$ | $`-\ln\lvert \text{MthPrc}\rvert`$ |
+| Size | $`\ln(\lvert prc\rvert \times shrout)`$, per PERMNO | $`-\ln(\text{MthCap})`$ |
+| STreversal | month return in percent, missing set to 0 | $`-100 \times \text{MthRet}`$, missing set to 0 |
 
-CIZ `MthCap` is in thousands of dollars, like $\lvert prc\rvert \times shrout$
+CIZ `MthCap` is in thousands of dollars, like $`\lvert prc\rvert \times shrout`$
 in the legacy files.
 
 Positive and negative infinity is stored as missing. No other transformation
@@ -78,11 +78,11 @@ Positive and negative infinity is stored as missing. No other transformation
 ## Timing
 
 - Universe membership and predictors use only information available at the
-  end of formation month $t$. OSAP data "are always end-of-month": a
-  characteristic dated `yyyymm` is joined to month $t$ = `yyyymm` without an
+  end of formation month $`t`$. OSAP data "are always end-of-month": a
+  characteristic dated `yyyymm` is joined to month $`t`$ = `yyyymm` without an
   additional lag.
-- No future return, survival, delisting or availability enters $U_t$.
-- A security in $U_t$ that delists during $t+1$ stays in $U_t$.
+- No future return, survival, delisting or availability enters $`U_t`$.
+- A security in $`U_t`$ that delists during $`t+1`$ stays in $`U_t`$.
 
 ## Reproducibility
 
@@ -108,10 +108,10 @@ OSAP release, its SHA-256 and its number of predictors are pinned in
 the CRSP extract matches its manifest (table, fields, rows per year, first
 and last month of the live table), each yearly file holds only its own year,
 and CRSP has records in every month between its first and last month; every
-PERMNO-month key is unique in CRSP, OSAP, $U_t$ and the panel; every month
-has a valid NYSE breakpoint; and the panel has exactly one row per $U_t$
+PERMNO-month key is unique in CRSP, OSAP, $`U_t`$ and the panel; every month
+has a valid NYSE breakpoint; and the panel has exactly one row per $`U_t`$
 member. The inputs are checked before earlier outputs are removed, and
 `data/diagnostics/summary.json` and `universe_by_month.csv` are written only
 when every check passes. Tests on synthetic data check the eligibility rules,
-the breakpoint, the absence of month-$t+1$ information, the join and the
+the breakpoint, the absence of month-$`t+1`$ information, the join and the
 predictor formulas.

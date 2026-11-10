@@ -52,17 +52,17 @@ bounded prediction ranks, signal extremity, and measured disagreement.
 
 # Hypotheses
 
-- **H1 (primary):** at comparable signal level $S$, and after accounting for
+- **H1 (primary):** at comparable signal level $`S`$, and after accounting for
   the relation between returns and the signal within each of the 20 monthly
   signal bins (bin-specific intercepts and bin-specific linear and quadratic
-  terms in $S^c$, estimated month by month in a Fama–MacBeth framework),
+  terms in $`S^c`$, estimated month by month in a Fama–MacBeth framework),
   higher conditional between-family disagreement is expected to weaken the
   signal–return relationship. The expected interaction sign is negative, but
   inference is two-sided: a significant positive interaction is reported as
   evidence in the opposite direction. The exact specification is in
   [hypotheses.md](hypotheses.md).
 - **H2 (primary):** the effect remains after additionally controlling for
-  volatility, size and illiquidity, as levels and interacted with $S^c$.
+  volatility, size and illiquidity, as levels and interacted with $`S^c`$.
 - **H3 (secondary):** examines whether between-family disagreement and
   within-family estimation uncertainty capture distinct information about
   forecast reliability; both are measured with noise.
@@ -75,23 +75,22 @@ bounded prediction ranks, signal extremity, and measured disagreement.
 Elastic Net, Random Forest, LightGBM and a small MLP, each with K = 5
 month-cluster bootstrap replicas, forecast monthly with annual retraining on an
 expanding window. The target is the cross-sectional rank of next-month return
-within the formation-time universe $U_t$ (eligible NYSE/AMEX/NASDAQ common
+within the formation-time universe $`U_t`$ (eligible NYSE/AMEX/NASDAQ common
 stocks, excluding those below the monthly 20th percentile of NYSE market
 capitalization), mapped to [-1, 1]. Family consensus ranks (averaged and
-re-ranked replica ranks on [0, 1]) are equally weighted into the ensemble
-signal level $S \in [0, 1]$. The centered signal is
-$S^c = 2(S - 0.5) \in [-1, 1]$, and signal strength (extremity) is $|S^c|$.
-Raw disagreement is the standard deviation of the family ranks. Because ranks
-are bounded, raw disagreement is mechanically constrained at high signal
-strength, so the primary measure ranks it within 20 monthly quantile bins of
-the signal level $S$ (not of $|S^c|$). Because the bound still acts inside the
-extreme bins, the H1 regression controls for the signal within each bin with
-bin-specific linear and quadratic terms rather than with global
-signal-strength controls. Within-family estimation uncertainty is
-constructed from replica-rank dispersion, computed separately within each model
-family. Given the design sensitivity documented by Chen et al. (2026), the
-estimation and inference choices were pre-specified in the pre-analysis plan
-before any empirical result was examined.
+re-ranked replica ranks on [0, 1]) are equally weighted into the ensemble signal
+level $`S \in [0, 1]`$. The centered signal is $`S^c = 2(S - 0.5) \in [-1, 1]`$,
+and signal strength (extremity) is $`|S^c|`$. Raw disagreement is the standard
+deviation of the family ranks. Because ranks are bounded, raw disagreement is
+mechanically constrained at high signal strength, so the primary measure ranks
+it within 20 monthly quantile bins of the signal level $`S`$ (not of $`|S^c|`$).
+Because the bound still acts inside the extreme bins, the H1 regression controls
+for the signal within each bin with bin-specific linear and quadratic terms
+rather than with global signal-strength controls. Within-family estimation
+uncertainty is constructed from replica-rank dispersion, computed separately
+within each model family. Given the design sensitivity documented by Chen et al.
+(2026), the estimation and inference choices were pre-specified in the
+pre-analysis plan before any empirical result was examined.
 
 # Expected Contribution
 
