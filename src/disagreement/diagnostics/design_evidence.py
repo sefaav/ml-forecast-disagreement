@@ -55,6 +55,17 @@ from disagreement.controls.h2 import INTERACTIONS, RANKS, load_h2_controls
 from disagreement.data.config import DEFAULT_CONFIG, DEFAULT_DATA_DIR, DataPaths
 from disagreement.data.validation import KEY, DataValidationError
 from disagreement.diagnostics.mechanical_bias import load_conditional
+from disagreement.inference.monthly import (
+    MIN_CELL,
+    MIN_DISTINCT,
+    MIN_SINGULAR_RATIO,
+    Cells,
+    bin_constants,
+    cells_of,
+    local_basis,
+    original_basis,
+    scaled_condition,
+)
 from disagreement.models.selection import FAMILIES, model_candidates
 from disagreement.signals.between import load_ensemble
 from disagreement.signals.conditional import SIGNAL_BINS, conditional_disagreement
@@ -68,9 +79,6 @@ ALTERNATIVE_BINS = (30, 40)
 SPECIFICATIONS = ("A", "B", "C", "D", "D_S")
 SPLINE_QUANTILES = (0.05, 0.20, 0.35, 0.50, 0.65, 0.80, 0.95)
 HAC_LAG = 6
-MIN_CELL = 30  # the estimability rule of "Estimable months"
-MIN_DISTINCT = 3
-MIN_SINGULAR_RATIO = 1e-8
 CD, CW = "conditional_between_family_disagreement", "conditional_within_family_uncertainty"
 RAW_CD, RAW_CW = "between_family_disagreement_raw", "within_family_uncertainty_raw"
 ACTIVE_FAMILIES = ("random_forest", "lightgbm", "mlp")  # the three families active in 2021
@@ -139,34 +147,7 @@ STRESS = "g = 0.01 S^c + 0.01 sign(S^c) z^2, z = (S^c - c_b) / h_b with the cell
 
 
 # ----------------------------------------------------------------------------------------------------------------
-# Cells of a sorted array
-
-
-@dataclass(frozen=True)
-class Cells:
-    """Contiguous groups of arrays sorted by group: offsets and sizes."""
-
-    starts: np.ndarray
-    counts: np.ndarray
-
-    def sum(self, v: np.ndarray) -> np.ndarray:
-        return np.add.reduceat(v, self.starts)
-
-    def mean(self, v: np.ndarray) -> np.ndarray:
-        return self.sum(v) / self.counts
-
-    def expand(self, g: np.ndarray) -> np.ndarray:
-        return np.repeat(g, self.counts)
-
-
-def cells_of(codes: np.ndarray) -> Cells:
-    """The cells of an array of group codes that is already sorted by code."""
-    if codes.size == 0:
-        raise ValueError("no observations")
-    if (np.diff(codes) < 0).any():
-        raise ValueError("codes must be sorted")
-    starts = np.concatenate([[0], np.flatnonzero(np.diff(codes)) + 1])
-    return Cells(starts, np.diff(np.append(starts, codes.size)))
+# Cell statistics
 
 
 def cell_statistics(x: np.ndarray, y: np.ndarray, cells: Cells) -> dict[str, np.ndarray]:
@@ -406,53 +387,10 @@ def monthly_spline_basis(x: np.ndarray) -> np.ndarray:
     return natural_spline_basis(x, np.quantile(x, SPLINE_QUANTILES))
 
 
-def bin_constants(sc: np.ndarray, bins: np.ndarray, n_bins: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Cell mean, half-range of S^c and mean of z^2 for bins 1..n_bins, from every member of the month's cell."""
-    order = np.argsort(bins, kind="stable")
-    sorted_bins, sorted_sc = bins[order], sc[order]
-    present = np.unique(sorted_bins)
-    if len(present) != n_bins or present[0] != 1 or present[-1] != n_bins:
-        raise DataValidationError(f"a month does not populate all {n_bins} signal bins.")
-    cells = cells_of(sorted_bins)
-    c = cells.mean(sorted_sc)
-    h = (np.maximum.reduceat(sorted_sc, cells.starts) - np.minimum.reduceat(sorted_sc, cells.starts)) / 2.0
-    h = np.where(h > 0, h, 1.0)  # a constant cell gives z = 0; the estimability check reports it
-    z = (sorted_sc - cells.expand(c)) / cells.expand(h)
-    return c, h, cells.mean(z * z)
-
-
-def local_basis(sc: np.ndarray, bins: np.ndarray, n_bins: int, degree: int) -> np.ndarray:
-    """Bin-local basis of "Monthly regressions": per bin an intercept, z = (S^c - c_b)/h_b and, with degree 2, q."""
-    c, h, z2 = bin_constants(sc, bins, n_bins)
-    idx = bins - 1
-    z = (sc - c[idx]) / h[idx]
-    q = z * z - z2[idx]
-    indicator = np.eye(n_bins)[idx]
-    columns = [indicator, indicator * z[:, None]]
-    if degree == 2:
-        columns.append(indicator * q[:, None])
-    return np.hstack(columns)
-
-
-def original_basis(sc: np.ndarray, bins: np.ndarray, n_bins: int) -> np.ndarray:
-    """Bin intercepts and bin-specific S^c and (S^c)^2 without rescaling: the same span as local_basis(degree 2)."""
-    indicator = np.eye(n_bins)[bins - 1]
-    return np.hstack([indicator, indicator * sc[:, None], indicator * (sc * sc)[:, None]])
-
-
 def residualise(y: np.ndarray, W: np.ndarray) -> np.ndarray:
     """y minus its least-squares projection on the columns of W."""
     coef = np.linalg.lstsq(W, y, rcond=None)[0]
     return y - W @ coef
-
-
-def scaled_condition(X: np.ndarray) -> tuple[float, float]:
-    """(condition number, sigma_min / sigma_max) of X after scaling every column to unit Euclidean norm."""
-    norms = np.linalg.norm(X, axis=0)
-    if not (norms > 0).all():
-        return float("inf"), 0.0
-    sv = np.linalg.svd(X / norms, compute_uv=False)
-    return float(sv[0] / sv[-1]) if sv[-1] > 0 else float("inf"), float(sv[-1] / sv[0])
 
 
 @dataclass(frozen=True)
