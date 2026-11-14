@@ -21,7 +21,7 @@ dependencies = [
 [project.optional-dependencies]
 # WRDS access for the CRSP extraction (wrds 3.5 requires pandas < 2.3).
 wrds = ["wrds>=3.5"]
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "statsmodels>=0.14"]  # statsmodels: reference HAC covariance in tests only
 
 [tool.setuptools.packages.find]
 where = ["src"]
