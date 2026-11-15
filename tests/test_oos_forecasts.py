@@ -5,10 +5,14 @@ import json
 import numpy as np
 import pandas as pd
 import pytest
+import torch
 import yaml
 
 from disagreement.bootstrap.months import month_cluster_bootstrap
 from disagreement.data.config import DEFAULT_CONFIG, DataPaths, load_data_config
+from disagreement.models.lightgbm import fit_lightgbm
+from disagreement.models.mlp import fit_mlp
+from disagreement.models.random_forest import fit_random_forest
 from disagreement.models.selection import model_candidates, validation_score
 from disagreement.preprocessing.ranks import rank_predictors
 from disagreement.walkforward import forecast
@@ -59,6 +63,7 @@ class Recorder:
 
     def __init__(self, monkeypatch, families, winner_params):
         self.events = []
+        self.model_seeds = []  # (family, seed) of every fit
         for family in families:
             monkeypatch.setitem(forecast._FAMILIES, family, (self._fit(family), self._predict))
         self.winner_params = winner_params
@@ -66,8 +71,9 @@ class Recorder:
         monkeypatch.setattr(forecast, "validation_score", self._score)
 
     def _fit(self, family):
-        def fit(X, y, params):
+        def fit(X, y, params, seed=None):
             self.events.append(("fit", family, dict(params), np.asarray(y).copy()))
+            self.model_seeds.append((family, seed))
             return dict(params)
 
         return fit
@@ -171,6 +177,36 @@ def test_families_share_the_bootstrap_draws(run):
     seeds = [json.loads((paths.oos_predictions / f / "2004.json").read_text())["bootstrap_seeds"]
              for f in ("elastic_net", "lightgbm")]
     assert seeds[0] == seeds[1]
+
+
+def test_a_custom_model_seed_reaches_every_stochastic_fit_and_the_metadata(tmp_path, monkeypatch):
+    paths, config_path, panel, target = _setup(tmp_path)
+    config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    config["model_selection"]["seed"] = 7
+    config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
+    families = ("random_forest", "lightgbm", "mlp")
+    recorder = Recorder(monkeypatch, families, None)
+    forecast.run_baseline_forecasts(paths, config_path, families, [2004], log=lambda _: None)
+    for family in families:  # every candidate of the selection, then the five replicas
+        seeds = [seed for f, seed in recorder.model_seeds if f == family]
+        assert seeds == [7] * (len(model_candidates(family, config_path)) + 5)
+        assert json.loads((paths.oos_predictions / family / "2004.json").read_text())["model_seed"] == 7
+        assert json.loads((paths.oos_predictions / family / "2004.json").read_text())["bootstrap_seeds"] == (
+            forecast.bootstrap_seeds(0, 2004, 5))  # the bootstrap seeds are separate and unchanged
+
+
+def test_the_stochastic_models_use_the_seed_they_are_given():
+    rng = np.random.default_rng(1)
+    X, y = rng.uniform(-1, 1, size=(120, 3)), rng.uniform(-1, 1, size=120)
+    forest = fit_random_forest(X, y, model_candidates("random_forest")[0], seed=7)
+    default = fit_random_forest(X, y, model_candidates("random_forest")[0])
+    assert forest.get_params()["random_state"] == 7 and default.get_params()["random_state"] == 0
+    assert fit_lightgbm(X, y, model_candidates("lightgbm")[0], seed=7).get_params()["random_state"] == 7
+    params = {**model_candidates("mlp")[0], "max_epochs": 1}
+    weights = [torch.cat([p.detach().flatten() for p in fit_mlp(X, y, params, seed=s).parameters()])
+               for s in (7, 7, 0, None)]
+    assert torch.equal(weights[0], weights[1]) and not torch.equal(weights[0], weights[2])  # seeded by `seed`
+    assert torch.equal(weights[2], weights[3])  # without a seed: the baseline seed 0, as before
 
 
 def test_every_oos_row_gets_one_raw_prediction_per_replica(run):

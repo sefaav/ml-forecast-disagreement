@@ -33,11 +33,12 @@ TUNED = ("n_estimators", "learning_rate", "num_leaves")  # vary across candidate
 CANDIDATE_PARAMS = (*FIXED, *TUNED)  # keys of each candidate from the frozen grid
 
 
-def fixed_settings() -> dict:
+def fixed_settings(seed: int | None = None) -> dict:
+    """The fixed settings; `seed` is the configured tuning seed (default: the baseline configuration's)."""
     return {
         "objective": "regression",
         "boosting_type": "gbdt",
-        "random_state": tuning_seed(),
+        "random_state": tuning_seed() if seed is None else seed,
         "n_jobs": -1,
         "device_type": "cpu",
         "deterministic": True,
@@ -46,12 +47,12 @@ def fixed_settings() -> dict:
     }
 
 
-def fit_lightgbm(X, y, params: Mapping[str, object]) -> LGBMRegressor:
-    """Fit one frozen LightGBM candidate to target_rank."""
+def fit_lightgbm(X, y, params: Mapping[str, object], seed: int | None = None) -> LGBMRegressor:
+    """Fit one frozen LightGBM candidate to target_rank, with the configured tuning seed."""
     if set(params) != set(CANDIDATE_PARAMS):
         raise ValueError(f"LightGBM candidates set exactly {CANDIDATE_PARAMS}; got {sorted(params)}")
     X, y = _check_inputs(X, y)
-    model = LGBMRegressor(**{name: params[name] for name in CANDIDATE_PARAMS}, **fixed_settings())
+    model = LGBMRegressor(**{name: params[name] for name in CANDIDATE_PARAMS}, **fixed_settings(seed))
     return model.fit(X, y)
 
 

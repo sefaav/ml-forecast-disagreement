@@ -85,8 +85,8 @@ def _deterministic() -> Iterator[None]:
         torch.use_deterministic_algorithms(enabled, warn_only=warn_only)
 
 
-def fit_mlp(X, y, params: Mapping[str, object]) -> MLP:
-    """Train one frozen MLP candidate on target_rank."""
+def fit_mlp(X, y, params: Mapping[str, object], seed: int | None = None) -> MLP:
+    """Train one frozen MLP candidate on target_rank; `seed` is the configured tuning seed (default: baseline)."""
     if set(params) != set(CANDIDATE_PARAMS):
         raise ValueError(f"MLP candidates set exactly {CANDIDATE_PARAMS}; got {sorted(params)}")
     if params["optimizer"] != "adam":
@@ -98,7 +98,7 @@ def fit_mlp(X, y, params: Mapping[str, object]) -> MLP:
     predictors = torch.from_numpy(X.astype(np.float32))
     targets = torch.from_numpy(y.astype(np.float32))
     n = len(targets)
-    seed = tuning_seed()
+    seed = tuning_seed() if seed is None else seed
 
     with _deterministic(), torch.random.fork_rng(devices=[]):
         torch.manual_seed(seed)  # initialization

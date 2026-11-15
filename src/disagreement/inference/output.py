@@ -44,7 +44,10 @@ Destinations are checked fail-closed (``check_destination``): never a symbolic
 link or junction, never the data root, the diagnostics directory, the
 repository, the configuration file or a pipeline data directory, nor any of
 their ancestors, and never inside a pipeline data directory or inside another
-result set (a directory holding both a manifest and a completion marker). An
+result set (a directory holding both a manifest and a completion marker).
+Inside the repository, a destination must lie below one of its Git-ignored
+output areas (``IGNORED_OUTPUT_AREAS``: ``data/``, ``experiments/results/``),
+so that the result files cannot be committed by accident. An
 existing destination is replaced only if it is a verifiable published inference
 result set made of regular files; anything else is refused without being
 touched.
@@ -134,6 +137,10 @@ IMPLEMENTED_ANALYSES = (
 OUTSTANDING_ANALYSES = (*OUTSTANDING_ROBUSTNESS,
                         "H4: disagreement-based filter and its secondary backtesting extension")
 CHUNK = 1 << 20
+# Repository directories ignored by .gitignore ("/data/*", "/experiments/results/*"): the only places inside the
+# repository where a result set, derived from licensed data, may be written; strictly below them, so that the
+# staging directory beside the destination is ignored too.
+IGNORED_OUTPUT_AREAS = ("data", "experiments/results")
 NAME_SURROGATE = 0x20000000  # Windows reparse-tag bit of redirecting reparse points (IsReparseTagNameSurrogate)
 
 
@@ -505,14 +512,18 @@ def check_destination(output_dir: Path, paths: DataPaths, config_path: Path, rep
         raise PublicationError(f"{output_dir.name}: the destination is inside a pipeline data directory.")
     if any(_is_result_set(parent) for parent in target.parents):
         raise PublicationError(f"{output_dir.name}: the destination is inside a published inference result set.")
+    repo = REPO_ROOT.resolve()
+    if repo in target.parents and not any((repo / area) in target.parents for area in IGNORED_OUTPUT_AREAS):
+        raise PublicationError(f"{output_dir.name}: the destination is inside the repository but outside its "
+                               f"Git-ignored output areas {list(IGNORED_OUTPUT_AREAS)}.")
     if os.path.lexists(output_dir):
         if not replace:
             raise PublicationError(f"{output_dir.name}: a result set already exists; pass replace to supersede it.")
         _check_replaceable(output_dir)
 
 
-def _scope(run: InferenceRun) -> dict:
-    gate = run.report.h2.conditions.get("gate_open")
+def _scope(gate: bool | None) -> dict:
+    """The scope fields of the completion marker, given the H1 -> H2 gate recorded in report.json."""
     return {
         "implemented_analyses": list(IMPLEMENTED_ANALYSES),
         "outstanding_analyses": list(OUTSTANDING_ANALYSES),
@@ -573,7 +584,7 @@ def publish(
             "n_years": len({m // 100 for m in run.grid.tolist()}),
             "primary_outcome": PRIMARY_OUTCOME,
             "primary_lag": PRIMARY_LAG,
-            **_scope(run),
+            **_scope(run.report.h2.conditions.get("gate_open")),
             "manifest_sha256": sha256(staging / MANIFEST),
         }
         (staging / SUMMARY).write_text(_dumps(summary), encoding="utf-8")  # the completion marker, last
@@ -599,6 +610,31 @@ def publish(
     if moved_aside:
         shutil.rmtree(previous, ignore_errors=True)  # the superseded result set, verified as such before the move
     return summary
+
+
+def _check_scope(output_dir: Path, summary: dict, months: list[int]) -> None:
+    """The marker's meaning and scope: fixed fields from this module, the H2 role from the hashed report.json."""
+    try:
+        gate = json.loads((output_dir / "report.json").read_text(encoding="utf-8"))["h1_h2_gate"]["open"]
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        raise PublicationError(f"{output_dir.name}: report.json does not record the H1 -> H2 gate.") from exc
+    expected = {
+        "status": "completed",
+        "meaning": COMPLETION_MEANING,
+        "schema_version": SCHEMA_VERSION,
+        "n_years": len({m // 100 for m in months}),
+        "primary_outcome": PRIMARY_OUTCOME,
+        "primary_lag": PRIMARY_LAG,
+        **_scope(gate),
+    }
+    free = {"grid", "created_utc", "manifest_sha256"}  # checked against the manifest above, or a timestamp
+    differing = sorted(k for k in expected  # JSON forms: true is not 1, 6.0 is not 6
+                       if k not in summary
+                       or json.dumps(summary[k], sort_keys=True) != json.dumps(expected[k], sort_keys=True))
+    unexpected = sorted(set(summary) - set(expected) - free)
+    if differing or unexpected or not isinstance(summary.get("created_utc"), str):
+        raise PublicationError(f"{output_dir.name}: the completion marker misstates the result set; fields "
+                               f"{differing} differ, {unexpected} are unexpected.")
 
 
 def verify_published(output_dir: Path, paths: DataPaths | None = None, config_path: Path | None = None) -> dict:
@@ -638,6 +674,7 @@ def verify_published(output_dir: Path, paths: DataPaths | None = None, config_pa
             raise ValueError("the monthly calendar is not the consecutive recorded grid")
     except ValueError as exc:
         raise PublicationError(f"{output_dir.name}: calendar metadata is inconsistent ({exc}).") from exc
+    _check_scope(output_dir, summary, months)
     if paths is not None and config_path is not None:
         check_inputs(paths, config_path, manifest["inputs"])
     return summary

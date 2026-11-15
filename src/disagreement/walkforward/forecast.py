@@ -58,12 +58,16 @@ OUTPUT_COLUMNS = ("permno", "yyyymm", "family", "replica", "prediction")
 OUTPUT_KEY = ("permno", "yyyymm", "family", "replica")
 
 
+def _fit_elastic_net(X, y, params, seed: int | None = None):
+    return fit_elastic_net(X, y, params)  # deterministic coordinate descent: no seed is involved
+
+
 def _predict_elastic_net(model, X) -> np.ndarray:
     return model.predict(X)
 
 
 _FAMILIES = {
-    "elastic_net": (fit_elastic_net, _predict_elastic_net),
+    "elastic_net": (_fit_elastic_net, _predict_elastic_net),
     "random_forest": (fit_random_forest, predict_random_forest),
     "lightgbm": (fit_lightgbm, predict_lightgbm),
     "mlp": (fit_mlp, predict_mlp),
@@ -168,9 +172,13 @@ def _in(months: np.ndarray, start: int, end: int) -> np.ndarray:
 
 
 def run_family_episode(
-    data: EpisodeData, family: str, candidates: Sequence[dict], seeds: Sequence[int]
+    data: EpisodeData, family: str, candidates: Sequence[dict], seeds: Sequence[int], model_seed: int | None = None
 ) -> tuple[pd.DataFrame, dict]:
-    """Select one candidate on training -> validation, then fit and predict one replica per seed."""
+    """Select one candidate on training -> validation, then fit and predict one replica per seed.
+
+    `seeds` are the bootstrap seeds of the replicas; `model_seed` is the configured tuning seed of the stochastic
+    estimators, the same in every candidate and replica fit (default: the baseline configuration's).
+    """
     fit, predict = _FAMILIES[family]
     e, months, X, y = data.episode, data.months, data.X, data.target
     finite = np.isfinite(y)
@@ -184,7 +192,7 @@ def run_family_episode(
 
     scores = []
     for params in candidates:  # no resampling during selection
-        model = fit(X[fit_rows], y[fit_rows], params)
+        model = fit(X[fit_rows], y[fit_rows], params, seed=model_seed)
         prediction = predict(model, X[validation_rows])
         scores.append(validation_score(months[validation_rows], prediction, y[validation_rows]))
     best = select_candidate(scores)
@@ -195,7 +203,7 @@ def run_family_episode(
         _, sample = month_cluster_bootstrap(months[history_rows], seed=seed)  # every history row is drawable
         rows = history_rows[sample]
         rows = rows[finite[rows]]  # missing targets only leave the supervised fit
-        model = fit(X[rows], y[rows], params)
+        model = fit(X[rows], y[rows], params, seed=model_seed)
         prediction = np.asarray(predict(model, X[oos_rows]), dtype="float64")
         if prediction.shape != (len(oos_rows),) or not np.isfinite(prediction).all():
             raise DataValidationError(f"{family} {e.oos_year}: invalid OOS predictions.")
@@ -306,8 +314,8 @@ def run_baseline_forecasts(
             _remove_family_signal(paths, family, episode.oos_year)
             remove_ensemble_signal(paths, episode.oos_year)
             remove_within_family_uncertainty(paths, episode.oos_year)
-            frame, metadata = run_family_episode(data, family, model_candidates(family, config_path), seeds)
-            metadata["model_seed"] = model_seed
+            frame, metadata = run_family_episode(data, family, model_candidates(family, config_path), seeds, model_seed)
+            metadata["model_seed"] = model_seed  # the seed passed to every fit above
             _write(paths.oos_predictions / family, episode.oos_year, frame, metadata)
             log(
                 f"{family} {episode.oos_year}: candidate {metadata['selected_candidate_index']} "

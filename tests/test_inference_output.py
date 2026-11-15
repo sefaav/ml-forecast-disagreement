@@ -572,3 +572,53 @@ def test_verification_rejects_a_structurally_invalid_calendar_with_consistent_ha
             verify_published(destination)
     _reseal(destination, original)
     verify_published(destination, paths, config)
+
+
+def test_verification_rejects_a_completion_marker_that_misstates_the_scope(source, executed, tmp_path):
+    paths, config = _copy(source, tmp_path)
+    run, inputs = executed
+    destination = paths.diagnostics / "inference"
+    publish(run, inputs, destination, paths, config)
+    marker = destination / SUMMARY  # not covered by the manifest: checked against the module and report.json
+    original = json.loads(marker.read_text(encoding="utf-8"))
+    roles = ("confirmatory (H1 gate passed)", "descriptive (H1 gate not passed)")
+    other_role = roles[1] if original["roles"]["H2"] == roles[0] else roles[0]
+    edits = {
+        "scientific_protocol_complete": original | {"scientific_protocol_complete": True},
+        "primary_outcome": original | {"primary_outcome": "ret_next"},
+        "primary_lag": original | {"primary_lag": 0},
+        "n_years": original | {"n_years": 40},
+        "implemented_analyses": original | {"implemented_analyses": [*original["implemented_analyses"], "H4"]},
+        "outstanding_analyses": original | {"outstanding_analyses": original["outstanding_analyses"][1:]},
+        "roles": original | {"roles": original["roles"] | {"H2": other_role}},  # contradicts the recorded gate
+        "meaning": {k: v for k, v in original.items() if k != "meaning"},  # a missing field
+        "note": original | {"note": "full study complete"},  # an unexpected field
+    }
+    for field, summary in edits.items():
+        marker.write_text(output._dumps(summary), encoding="utf-8")
+        with pytest.raises(PublicationError, match=rf"misstates the result set.*'{field}'"):
+            verify_published(destination)
+    marker.write_text(output._dumps(original), encoding="utf-8")
+    verify_published(destination, paths, config)
+
+
+def test_destinations_inside_the_repository_must_be_in_its_ignored_output_areas(tmp_path, monkeypatch):
+    repo = tmp_path / "repo"  # stands for the repository root, so that the real data/ is never touched
+    for directory in ("src/disagreement", "docs", "configs", "experiments/results", "data"):
+        (repo / directory).mkdir(parents=True)
+    config = repo / "configs" / "baseline.yaml"
+    config.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(output, "REPO_ROOT", repo)
+    paths = DataPaths(repo / "data")
+    before = _snapshot(tmp_path)
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("an unsafe destination must be refused before any outcome is read")
+
+    for destination in (repo / "src" / "disagreement" / "results", repo / "docs" / "inference", repo / "inference"):
+        with pytest.raises(PublicationError, match="outside its Git-ignored output areas"):
+            execute_inference(paths, config, destination, runner=forbidden)
+    assert _snapshot(tmp_path) == before  # refused before anything was read or created
+    for destination in (output.default_output_dir(paths), repo / "experiments" / "results" / "inference",
+                        tmp_path / "elsewhere" / "inference"):
+        output.check_destination(destination, paths, config)  # the default, an ignored area, outside the repository

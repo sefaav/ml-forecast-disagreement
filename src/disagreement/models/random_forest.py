@@ -29,16 +29,18 @@ TUNED = ("max_depth", "min_samples_leaf", "max_features")  # vary across candida
 CANDIDATE_PARAMS = (*FIXED, *TUNED)  # keys of each candidate from the frozen grid
 
 
-def fixed_settings() -> dict:
-    return {"criterion": "squared_error", "bootstrap": True, "random_state": tuning_seed(), "n_jobs": -1}
+def fixed_settings(seed: int | None = None) -> dict:
+    """The fixed settings; `seed` is the configured tuning seed (default: the baseline configuration's)."""
+    random_state = tuning_seed() if seed is None else seed
+    return {"criterion": "squared_error", "bootstrap": True, "random_state": random_state, "n_jobs": -1}
 
 
-def fit_random_forest(X, y, params: Mapping[str, object]) -> RandomForestRegressor:
-    """Fit one frozen Random Forest candidate to target_rank."""
+def fit_random_forest(X, y, params: Mapping[str, object], seed: int | None = None) -> RandomForestRegressor:
+    """Fit one frozen Random Forest candidate to target_rank, with the configured tuning seed."""
     if set(params) != set(CANDIDATE_PARAMS):
         raise ValueError(f"Random Forest candidates set exactly {CANDIDATE_PARAMS}; got {sorted(params)}")
     X, y = _check_inputs(X, y)
-    model = RandomForestRegressor(**{name: params[name] for name in CANDIDATE_PARAMS}, **fixed_settings())
+    model = RandomForestRegressor(**{name: params[name] for name in CANDIDATE_PARAMS}, **fixed_settings(seed))
     return model.fit(X, y)
 
 
