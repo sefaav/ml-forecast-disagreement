@@ -58,7 +58,7 @@ def _setup(tmp_path):
     )
     ensemble = keys.copy()
     for family in FAMILIES:
-        ensemble[f"{family}_rank"] = rng.integers(0, 5, size=len(keys)) / 4  # many tied signals
+        ensemble[f"{family}_rank"] = rng.integers(0, 3, size=len(keys)) / 2  # unit ranks; many tied signals
     ensemble["ensemble_signal"] = (
         ensemble["elastic_net_rank"] + ensemble["random_forest_rank"] + ensemble["lightgbm_rank"] + ensemble["mlp_rank"]
     ) / 4.0

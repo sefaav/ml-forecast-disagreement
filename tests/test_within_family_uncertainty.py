@@ -6,6 +6,7 @@ import math
 
 import numpy as np
 import pandas as pd
+import pytest
 import yaml
 
 from disagreement.data.config import DEFAULT_CONFIG, DataPaths
@@ -68,6 +69,34 @@ def test_sample_sd_across_replicas_ranked_by_family_and_month_then_averaged():
     assert jan["within_family_uncertainty_raw"].max() < 1.0  # the mean is not ranked again
 
 
+def test_equal_permuted_and_equivalent_ranks_give_exact_zeros_and_ties():
+    # February, ten stocks (unit ranks k/18): five equal replica ranks 1/18, and stock 3 permuting stock 2.
+    spread = [1, 5, 7, 11, 17]
+    february = {(1, 200402): [1 / 18] * 5, (2, 200402): [k / 18 for k in spread],
+                (3, 200402): [k / 18 for k in spread[::-1]]}
+    february |= {(p, 200402): [(p + r) / 18 for r in range(R)] for p in range(4, 11)}
+    assert np.std([1 / 18] * 5, ddof=1) != 0.0  # the defect: a constant gets a tiny positive SD
+    # January, seven stocks: replica spread level L (SD increasing in L) puts a stock at uncertainty rank L/6.
+    # Stocks 1 and 2 sit at levels (0, 1, 2, 3) and (2, 0, 3, 1) across the four families.
+    levels = {1: (0, 1, 2, 3), 2: (2, 0, 3, 1)}
+    signals = {}
+    for i, family in enumerate(FAMILIES):
+        free = iter(sorted(set(range(7)) - {levels[1][i], levels[2][i]}))
+        level = {p: levels[p][i] if p in levels else next(free) for p in range(1, 8)}
+        january = {(p, 200401): [(6 - L) / 12, 0.5, 0.5, 0.5, (6 + L) / 12] for p, L in level.items()}
+        signals[family] = _signals(family, january | february)
+    a, b = [0 / 6, 1 / 6, 2 / 6, 3 / 6], [2 / 6, 0 / 6, 3 / 6, 1 / 6]
+    assert (a[0] + a[1] + a[2] + a[3]) / 4 != (b[0] + b[1] + b[2] + b[3]) / 4  # the defect in the mean
+    out = within_family_uncertainty(signals, R).set_index(["yyyymm", "permno"])
+    feb, jan = out.loc[200402], out.loc[200401]
+    for family in FAMILIES:
+        assert feb.loc[1, f"{family}_uncertainty_sd"] == 0.0  # exactly zero
+        assert feb.loc[2, f"{family}_uncertainty_sd"] == feb.loc[3, f"{family}_uncertainty_sd"]
+    assert [jan.loc[p, f"{f}_uncertainty_rank"] * 6 for f in FAMILIES for p in (1, 2)] == pytest.approx(
+        [x for pair in zip(*levels.values()) for x in pair])  # the intended uncertainty ranks
+    assert jan.loc[1, "within_family_uncertainty_raw"] == jan.loc[2, "within_family_uncertainty_raw"] == 0.25
+
+
 def _setup(tmp_path):
     """Family signals of the four families for OOS year 2004, with a config whose episodes include 2004."""
     rng = np.random.default_rng(0)
@@ -76,7 +105,7 @@ def _setup(tmp_path):
     for family in FAMILIES:
         directory = paths.family_signals / family
         directory.mkdir(parents=True)
-        replica_ranks = {key: list(rng.integers(0, 5, size=R) / 4) for key in keys}
+        replica_ranks = {key: list(rng.integers(0, 3, size=R) / 2) for key in keys}  # unit ranks, any month size
         frame = _signals(family, replica_ranks, family_rank=0.25)
         frame.sample(frac=1.0, random_state=0).to_parquet(directory / "2004.parquet", index=False)
         (directory / "2004.json").write_text(json.dumps({"family": family, "oos_year": 2004}))
@@ -111,7 +140,7 @@ def test_output_schema_coverage_and_reproducible_completion(tmp_path):
     assert np.isfinite(sds).all() and sds.min() >= 0.0
     assert np.isfinite(ranks).all() and ranks.min() >= 0.0 and ranks.max() <= 1.0
     assert aggregate.min() >= 0.0 and aggregate.max() <= 1.0
-    np.testing.assert_array_equal(aggregate, (ranks[:, 0] + ranks[:, 1] + ranks[:, 2] + ranks[:, 3]) / 4.0)
+    np.testing.assert_allclose(aggregate, ranks.mean(axis=1), rtol=0, atol=1e-15)  # exact ties: regression test
 
     indexed = out.set_index(["permno", "yyyymm"])
     for family in FAMILIES:  # the SD of each stock-month's saved replica ranks

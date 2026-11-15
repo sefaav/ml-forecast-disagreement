@@ -22,7 +22,7 @@ from disagreement.diagnostics.design_evidence import (
 )
 from disagreement.models.selection import FAMILIES
 from disagreement.signals.conditional import conditional_disagreement, signal_bins
-from disagreement.signals.family import remove_conditional_disagreement, unit_rank
+from disagreement.signals.family import month_size, rank_mean, remove_conditional_disagreement, unit_rank
 from disagreement.walkforward.calendar import month_range
 
 FILES = [
@@ -382,10 +382,8 @@ def _setup(tmp_path, constant_year: int | None = 2005, seed=0):
                 ensemble[f"{family}_rank"] = 0.5
             else:
                 ensemble[f"{family}_rank"] = unit_rank(pd.Series(rng.standard_normal(n)), [keys["yyyymm"]])
-        ensemble["ensemble_signal"] = (
-            ensemble["elastic_net_rank"] + ensemble["random_forest_rank"] + ensemble["lightgbm_rank"]
-            + ensemble["mlp_rank"]
-        ) / 4.0
+        ranks = ensemble[[f"{f}_rank" for f in FAMILIES]].to_numpy()
+        ensemble["ensemble_signal"] = rank_mean(ranks, month_size(keys["yyyymm"]), "ranks")  # as the ensemble stage
         ensemble.sample(frac=1.0, random_state=1).to_parquet(paths.ensemble_signals / f"{year}.parquet", index=False)
         (paths.ensemble_signals / f"{year}.json").write_text(json.dumps({"oos_year": year}))
         signals = keys.copy()

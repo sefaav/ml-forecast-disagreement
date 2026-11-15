@@ -5,7 +5,9 @@ For each stock and OOS formation month,
     ensemble_signal = (elastic_net_rank + random_forest_rank + lightgbm_rank + mlp_rank) / 4,
 
 where each column is that family's ``family_rank`` on [0, 1]. The average is
-not ranked again, centred or rescaled. Only the saved family signals are read:
+computed from the ranks' exact integer numerators and rounded once, so stocks
+whose four family ranks are the same multiset tie exactly. It is not ranked
+again, centred or rescaled. Only the saved family signals are read:
 no prediction, target, return or model is involved. The four families must
 cover exactly the same stock-months, spanning all twelve months of the OOS
 year; none is dropped or filled.
@@ -30,7 +32,7 @@ from disagreement.data.config import DEFAULT_CONFIG, DEFAULT_DATA_DIR, DataPaths
 from disagreement.data.validation import DataValidationError, require_unique_keys
 from disagreement.models.selection import FAMILIES
 from disagreement.signals.family import (
-    SIGNAL_COLUMNS, SIGNAL_KEY, configured_replicas, remove_between_family_disagreement,
+    SIGNAL_COLUMNS, SIGNAL_KEY, configured_replicas, month_size, rank_mean, remove_between_family_disagreement,
 )
 from disagreement.walkforward.calendar import baseline_episodes, month_range
 
@@ -75,9 +77,8 @@ def ensemble_signals(ranks: Mapping[str, pd.Series]) -> pd.DataFrame:
                 f"{family} covers different stock-months than {FAMILIES[0]}: {missing} missing, {extra} extra."
             )
     out = pd.DataFrame({f"{family}_rank": ranks[family].to_numpy() for family in FAMILIES}, index=keys)
-    out["ensemble_signal"] = (
-        out["elastic_net_rank"] + out["random_forest_rank"] + out["lightgbm_rank"] + out["mlp_rank"]
-    ) / 4.0
+    n = month_size(pd.Series(keys.get_level_values("yyyymm")))
+    out["ensemble_signal"] = rank_mean(out.to_numpy(dtype="float64"), n, "family ranks")  # exact: ties stay ties
     out = out.reset_index().sort_values(["yyyymm", "permno"], ignore_index=True).loc[:, list(ENSEMBLE_COLUMNS)]
     require_unique_keys(out, "ensemble signals")
     if not _in_unit_interval(out.loc[:, list(ENSEMBLE_COLUMNS[2:])].to_numpy(dtype="float64")):

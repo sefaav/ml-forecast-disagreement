@@ -10,9 +10,10 @@ family uncertainty ranks; it is not ranked again and not yet conditioned on
 the ensemble signal. Only the saved family signals are read: no prediction,
 target, return or model is involved.
 
-The replica ranks of each stock-month are sorted before the standard
-deviation is computed, so stocks with the same replica ranks in a different
-replica order tie exactly.
+The standard deviations and the mean are computed from the ranks' exact
+integer numerators and rounded once, so stocks with the same replica ranks in
+another order, or the same four uncertainty ranks in another family order, tie
+exactly, and equal replica ranks give a standard deviation of exactly 0.
 
 Command line: ``python -m disagreement.signals.within [--year Y]``.
 """
@@ -27,13 +28,16 @@ import sys
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from disagreement.data.config import DEFAULT_CONFIG, DEFAULT_DATA_DIR, DataPaths
 from disagreement.data.validation import DataValidationError, require_unique_keys
 from disagreement.models.selection import FAMILIES
 from disagreement.signals.ensemble import family_ranks
-from disagreement.signals.family import configured_replicas, remove_conditional_disagreement, unit_rank
+from disagreement.signals.family import (
+    configured_replicas, month_size, rank_mean, rank_numerators, remove_conditional_disagreement, unit_rank,
+)
 from disagreement.walkforward.calendar import baseline_episodes, month_range
 
 OUTPUT_COLUMNS = (
@@ -50,7 +54,10 @@ def uncertainty_sd(signals: pd.DataFrame, replicas: int) -> pd.Series:
     ordered = signals.sort_values(["yyyymm", "permno", "replica_rank"], ignore_index=True)
     values = ordered["replica_rank"].to_numpy(dtype="float64").reshape(-1, replicas)  # one sorted row per stock-month
     index = pd.MultiIndex.from_frame(ordered.iloc[::replicas][["permno", "yyyymm"]])
-    return pd.Series(values.std(axis=1, ddof=1), index=index)
+    n = ordered.groupby(["yyyymm", "replica"])["replica_rank"].transform("count").to_numpy()[::replicas]
+    j, m = rank_numerators(values, n, "replica ranks")
+    spread = replicas * (j * j).sum(axis=1) - j.sum(axis=1) ** 2  # exact integer: K (K - 1) m^2 times the variance
+    return pd.Series(np.sqrt(spread / (replicas * (replicas - 1))) / m, index=index)
 
 
 def within_family_uncertainty(signals: Mapping[str, pd.DataFrame], replicas: int) -> pd.DataFrame:
@@ -69,12 +76,8 @@ def within_family_uncertainty(signals: Mapping[str, pd.DataFrame], replicas: int
         out[f"{family}_uncertainty_sd"] = sds[family].to_numpy()
     for family in FAMILIES:  # ranked within each family and month only
         out[f"{family}_uncertainty_rank"] = unit_rank(out[f"{family}_uncertainty_sd"], [out["yyyymm"]])
-    out["within_family_uncertainty_raw"] = (
-        out["elastic_net_uncertainty_rank"]
-        + out["random_forest_uncertainty_rank"]
-        + out["lightgbm_uncertainty_rank"]
-        + out["mlp_uncertainty_rank"]
-    ) / 4.0
+    ranks = out.loc[:, [f"{family}_uncertainty_rank" for family in FAMILIES]].to_numpy(dtype="float64")
+    out["within_family_uncertainty_raw"] = rank_mean(ranks, month_size(out["yyyymm"]), "family uncertainty ranks")
     out = out.sort_values(["yyyymm", "permno"], ignore_index=True).loc[:, list(OUTPUT_COLUMNS)]
     require_unique_keys(out, "within-family uncertainty")
     return out

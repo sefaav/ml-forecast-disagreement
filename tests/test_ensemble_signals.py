@@ -12,6 +12,7 @@ from disagreement.data.config import DEFAULT_CONFIG, DataPaths
 from disagreement.data.validation import DataValidationError
 from disagreement.models.selection import FAMILIES
 from disagreement.signals.ensemble import ENSEMBLE_COLUMNS, ensemble_signals, family_ranks, main
+from disagreement.signals.conditional import SIGNAL_BINS, signal_bins
 from disagreement.signals.family import SIGNAL_COLUMNS
 from disagreement.walkforward.calendar import month_range
 
@@ -33,18 +34,34 @@ def _ranks(table):
 
 
 def test_ensemble_is_the_plain_average_of_the_four_family_ranks_and_is_not_re_ranked():
-    table = {  # stocks A, B, C
-        "elastic_net": [0.1, 0.4, 0.6],
-        "random_forest": [0.2, 0.4, 0.7],
-        "lightgbm": [0.3, 0.4, 0.8],
-        "mlp": [0.4, 0.4, 0.9],
+    table = {  # stocks A, B, C: unit ranks of three stocks, multiples of 1/4
+        "elastic_net": [0.0, 0.5, 0.5],
+        "random_forest": [0.25, 0.5, 0.75],
+        "lightgbm": [0.25, 0.5, 0.75],
+        "mlp": [0.5, 0.5, 1.0],
     }
     out = ensemble_signals(_ranks(table))
     assert out["permno"].tolist() == [1, 2, 3]
     for family, values in table.items():
         assert out[f"{family}_rank"].tolist() == values  # the original family ranks
-    np.testing.assert_allclose(out["ensemble_signal"].to_numpy(), [0.25, 0.40, 0.75], rtol=0, atol=1e-15)
+    np.testing.assert_allclose(out["ensemble_signal"].to_numpy(), [0.25, 0.50, 0.75], rtol=0, atol=1e-15)
     assert not np.allclose(out["ensemble_signal"].to_numpy(), [0.0, 0.5, 1.0])  # not a fresh cross-sectional rank
+
+
+def test_family_ranks_forming_the_same_multiset_give_the_same_signal_and_bin():
+    # Seven stocks: unit ranks are multiples of 1/12. Stocks 1 and 2 hold 0, 2/12, 2/12 and 8/12 in two family
+    # orders, which the plain left-to-right float sum rounds differently.
+    twelfths = {"elastic_net": [0, 0, 12, 6, 0, 4, 9], "random_forest": [2, 2, 12, 6, 0, 4, 9],
+                "lightgbm": [2, 8, 12, 6, 0, 4, 9], "mlp": [8, 2, 12, 6, 0, 4, 9]}
+    table = {f: [k / 12 for k in values] for f, values in twelfths.items()}
+    e, r, g, m = (table[f] for f in FAMILIES)
+    naive = [(e[i] + r[i] + g[i] + m[i]) / 4.0 for i in (0, 1)]  # the former left-to-right float sum
+    assert naive[0] != naive[1]  # the defect the exact mean removes
+    out = ensemble_signals(_ranks(table))
+    signal = out["ensemble_signal"]
+    assert signal.iloc[0] == signal.iloc[1] == 0.25  # bit-identical, and the exact value 12 / 48
+    bins = signal_bins(signal, out["yyyymm"], SIGNAL_BINS)
+    assert bins.iloc[0] == bins.iloc[1]  # the tie shares its average rank and therefore its bin
 
 
 def test_replica_rows_collapse_to_one_equal_weight_per_family():
@@ -71,7 +88,7 @@ def _setup(tmp_path):
     for family in FAMILIES:
         directory = paths.family_signals / family
         directory.mkdir(parents=True)
-        ranks = {key: float(rng.integers(0, 5)) / 4 for key in keys}
+        ranks = {key: float(rng.integers(0, 3)) / 2 for key in keys}  # unit ranks for any month size
         _signals(family, ranks).sample(frac=1.0, random_state=0).to_parquet(directory / "2004.parquet", index=False)
         (directory / "2004.json").write_text(json.dumps({"family": family, "oos_year": 2004}))
     config = yaml.safe_load(DEFAULT_CONFIG.read_text(encoding="utf-8"))

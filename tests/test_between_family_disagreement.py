@@ -9,8 +9,9 @@ import pandas as pd
 import yaml
 
 from disagreement.data.config import DEFAULT_CONFIG, DataPaths
-from disagreement.signals.between import OUTPUT_COLUMNS, between_family_disagreement, main
-from disagreement.signals.ensemble import ENSEMBLE_COLUMNS
+from disagreement.models.selection import FAMILIES
+from disagreement.signals.between import OUTPUT_COLUMNS, between_family_disagreement, load_ensemble, main
+from disagreement.signals.ensemble import ENSEMBLE_COLUMNS, ensemble_signals
 from disagreement.walkforward.calendar import month_range
 
 RANKS = list(ENSEMBLE_COLUMNS[2:6])
@@ -26,22 +27,54 @@ def _ensemble(rows):
 
 
 def test_disagreement_is_the_population_sd_of_the_four_family_ranks():
-    ranks = {1: [0.4, 0.4, 0.4, 0.4], 2: [0.0, 0.0, 1.0, 1.0], 3: [0.1, 0.2, 0.3, 0.4]}
+    ranks = {1: [0.5, 0.5, 0.5, 0.5], 2: [0.0, 0.0, 1.0, 1.0], 3: [0.0, 0.25, 0.5, 0.75]}  # unit ranks, n = 3
     ensemble = _ensemble([(p, 200401, values) for p, values in ranks.items()])
     out = between_family_disagreement(ensemble)
-    expected = [0.0, 0.5, math.sqrt(0.0125)]  # population SD (ddof = 0)
+    expected = [0.0, 0.5, math.sqrt(0.078125)]  # population SD (ddof = 0)
     np.testing.assert_allclose(out["between_family_disagreement_raw"].to_numpy(), expected, rtol=0, atol=1e-15)
-    sample_sd = np.std(ranks[3], ddof=1)  # 0.129..., what ddof = 1 would give for stock 3
+    sample_sd = np.std(ranks[3], ddof=1)  # 0.323..., what ddof = 1 would give for stock 3
     assert abs(out["between_family_disagreement_raw"].iloc[2] - sample_sd) > 0.01
     assert out["ensemble_signal"].tolist() == ensemble["ensemble_signal"].tolist()  # copied
     assert not np.allclose(out["between_family_disagreement_raw"].to_numpy(), [0.0, 0.5, 1.0])  # not re-ranked
+
+
+def _naive(ranks):  # the former float formula, left to right (Python's sum() would round exactly)
+    a, b, c, d = ranks
+    s = (a + b + c + d) / 4.0
+    return math.sqrt(((a - s) ** 2 + (b - s) ** 2 + (c - s) ** 2 + (d - s) ** 2) / 4.0)
+
+
+def test_permuted_or_translated_family_ranks_have_exactly_the_same_disagreement():
+    # Seven stocks: unit ranks are multiples of 1/12. Stock 2 permutes stock 1; stock 4 is stock 3 shifted by 2/12.
+    twelfths = {1: [0, 0, 0, 2], 2: [0, 0, 2, 0], 3: [0, 0, 0, 4], 4: [2, 2, 2, 6],
+                5: [12, 12, 12, 12], 6: [6, 6, 6, 6], 7: [3, 9, 3, 9]}
+    rows = [(p, 200401, [k / 12 for k in values]) for p, values in twelfths.items()]
+    assert _naive(rows[0][2]) != _naive(rows[1][2]) and _naive(rows[2][2]) != _naive(rows[3][2])  # the defect
+    out = between_family_disagreement(_ensemble(rows))["between_family_disagreement_raw"]
+    assert out.iloc[0] == out.iloc[1] and out.iloc[2] == out.iloc[3]  # bit-identical
+    assert out.iloc[0] == math.sqrt(12) / 48 and out.iloc[4] == out.iloc[5] == 0.0  # sqrt(4 * 4 - 2 ** 2) / (4 * 12)
+
+
+def test_exact_ensemble_signals_pass_the_loader_consistency_check(tmp_path):
+    rng = np.random.default_rng(5)
+    index = pd.MultiIndex.from_tuples([(p, m) for m in month_range(200401, 200412) for p in range(1, 8)],
+                                      names=["permno", "yyyymm"])
+    ranks = {f: pd.Series(rng.integers(0, 13, size=len(index)) / 12, index=index) for f in FAMILIES}  # n = 7
+    signals = ensemble_signals(ranks)
+    naive = (signals[RANKS[0]] + signals[RANKS[1]] + signals[RANKS[2]] + signals[RANKS[3]]) / 4.0  # former formula
+    assert (naive != signals["ensemble_signal"]).any()  # values the former equality check would have rejected
+    paths = DataPaths(tmp_path / "data")
+    paths.ensemble_signals.mkdir(parents=True)
+    signals.to_parquet(paths.ensemble_signals / "2004.parquet", index=False)
+    (paths.ensemble_signals / "2004.json").write_text(json.dumps({"oos_year": 2004}))
+    pd.testing.assert_frame_equal(load_ensemble(paths, 2004), signals)
 
 
 def _setup(tmp_path):
     """A complete ensemble year 2004, with a config whose episodes include 2004."""
     rng = np.random.default_rng(0)
     rows = [
-        (p, m, list(rng.integers(0, 5, size=4) / 4))
+        (p, m, list(rng.integers(0, 3, size=4) / 2))  # unit ranks for any month size
         for m in month_range(200401, 200412)
         for p in range(1, 6 + m % 3)
     ]

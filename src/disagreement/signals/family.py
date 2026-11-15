@@ -10,7 +10,8 @@ are read: no target, return or model is involved.
 
 The mean is computed from the exact sum of the replica ranks (half-integers),
 so stocks with the same replica ranks in a different replica order tie
-exactly in ``family_rank``.
+exactly in ``family_rank``. Downstream sums and dispersions of unit ranks use
+their exact integer numerators (``rank_numerators``) for the same reason.
 
 Command line: ``python -m disagreement.signals.family [--family F] [--year Y]``.
 """
@@ -49,6 +50,34 @@ def unit_rank(values: pd.Series, groups: Sequence[pd.Series]) -> pd.Series:
     """Average-tie ranks within each group, mapped to [0, 1]."""
     grouped = values.groupby(list(groups))
     return _unit_scale(grouped.rank(method="average"), grouped.transform("count"))
+
+
+def rank_numerators(ranks: np.ndarray, n: np.ndarray, label: str) -> tuple[np.ndarray, np.ndarray]:
+    """Integers k (rows x columns) and m (rows) with ranks == k / m exactly, for unit ranks in cross-sections of n.
+
+    A unit rank (R - 1) / (n - 1) of a half-integer average rank R is the fraction k / m with k = 2 (R - 1) and
+    m = 2 (n - 1); the 0.5 of a single-stock cross-section is 1 / 2. Both divisions are correctly rounded, so k / m
+    reproduces the saved value exactly, which is checked. Sums and dispersions computed from k are exact, so
+    mathematically tied quantities are bit-identical whatever the order or the floating-point rounding.
+    """
+    values = np.asarray(ranks, dtype="float64")
+    m = np.where(np.asarray(n) > 1, 2 * (np.asarray(n, dtype="int64") - 1), 2)
+    with np.errstate(invalid="ignore"):  # a non-finite value fails the check below
+        k = np.rint(values * m[:, None]).astype("int64")
+    if not np.array_equal(k / m[:, None], values):
+        raise DataValidationError(f"{label}: values that are not unit ranks of their monthly cross-section.")
+    return k, m
+
+
+def rank_mean(ranks: np.ndarray, n: np.ndarray, label: str) -> np.ndarray:
+    """The row means of unit ranks (rows x columns), from their exact numerators and correctly rounded once."""
+    k, m = rank_numerators(ranks, n, label)
+    return k.sum(axis=1) / (k.shape[1] * m)
+
+
+def month_size(month: pd.Series) -> np.ndarray:
+    """The number of rows of each row's month: the cross-section size n of ranks computed by month."""
+    return month.groupby(month).transform("size").to_numpy()
 
 
 def family_signals(predictions: pd.DataFrame, replicas: int) -> pd.DataFrame:

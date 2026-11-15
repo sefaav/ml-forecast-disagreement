@@ -6,7 +6,9 @@ For each stock and OOS formation month, with S the ensemble signal,
 
 the population standard deviation (ddof = 0) of the four family ranks: the
 four families are the complete fixed set of the design, not a sample. As the
-ranks lie in [0, 1], the disagreement lies in [0, 0.5]. It is not ranked,
+ranks lie in [0, 1], the disagreement lies in [0, 0.5]. It is computed from
+the ranks' exact integer numerators, so permuted or commonly translated family
+ranks give exactly the same value. It is not ranked,
 conditioned or rescaled. Only the saved ensemble signals are read: no
 prediction, target, return or model is involved.
 
@@ -29,25 +31,20 @@ import pandas as pd
 from disagreement.data.config import DEFAULT_CONFIG, DEFAULT_DATA_DIR, DataPaths
 from disagreement.data.validation import DataValidationError, require_unique_keys
 from disagreement.signals.ensemble import ENSEMBLE_COLUMNS
-from disagreement.signals.family import remove_conditional_disagreement
+from disagreement.signals.family import month_size, rank_mean, rank_numerators, remove_conditional_disagreement
 from disagreement.walkforward.calendar import baseline_episodes, month_range
 
 OUTPUT_COLUMNS = ("permno", "yyyymm", "ensemble_signal", "between_family_disagreement_raw")
+RANKS = list(ENSEMBLE_COLUMNS[2:6])  # the four family ranks
 
 
 def between_family_disagreement(ensemble: pd.DataFrame) -> pd.DataFrame:
     """The ensemble signal and the population SD of the four family ranks, one row per stock-month."""
     out = ensemble.loc[:, list(ENSEMBLE_COLUMNS)].sort_values(["yyyymm", "permno"], ignore_index=True)
-    s = out["ensemble_signal"]
-    out["between_family_disagreement_raw"] = np.sqrt(
-        (
-            (out["elastic_net_rank"] - s) ** 2
-            + (out["random_forest_rank"] - s) ** 2
-            + (out["lightgbm_rank"] - s) ** 2
-            + (out["mlp_rank"] - s) ** 2
-        )
-        / 4.0
-    )
+    k, m = rank_numerators(out.loc[:, RANKS].to_numpy(dtype="float64"), month_size(out["yyyymm"]), "family ranks")
+    f = k.shape[1]
+    spread = f * (k * k).sum(axis=1) - k.sum(axis=1) ** 2  # exact integer: f^2 m^2 times the population variance
+    out["between_family_disagreement_raw"] = np.sqrt(spread) / (f * m)
     return out.loc[:, list(OUTPUT_COLUMNS)]
 
 
@@ -68,8 +65,8 @@ def load_ensemble(paths: DataPaths, oos_year: int) -> pd.DataFrame:
     if observed != set(expected):
         missing, extra = sorted(set(expected) - observed), sorted(observed - set(expected))
         raise DataValidationError(f"{label}: not the 12 OOS months; missing {missing}, extra {extra}.")
-    mean = (frame["elastic_net_rank"] + frame["random_forest_rank"] + frame["lightgbm_rank"] + frame["mlp_rank"]) / 4.0
-    inconsistent = int((frame["ensemble_signal"] != mean).sum())
+    mean = rank_mean(frame.loc[:, RANKS].to_numpy(dtype="float64"), month_size(frame["yyyymm"]), label)
+    inconsistent = int((frame["ensemble_signal"].to_numpy(dtype="float64") != mean).sum())
     if inconsistent:
         raise DataValidationError(
             f"{label}: ensemble_signal is not the mean of the family ranks in {inconsistent} rows."
