@@ -352,3 +352,32 @@ def test_wald_rejects_affine_collinearity_that_rounding_leaves_slightly_positive
     broken = series.copy()
     broken[17, 1] += 0.05
     assert fama_macbeth_wald(broken, estimable).df == 2
+
+
+def test_a_nonzero_constant_series_is_rejected_even_when_rounding_leaves_a_spurious_variance():
+    n = 480
+    complete = np.ones(n, dtype=bool)
+    constant = np.full(n, 0.004)  # 480 / 0.004: the mean rounds to 0.004000000000000001 and x is not exactly zero
+    assert abs(constant.sum() / n - 0.004) > 0.0  # the rounding this test guards against
+    for lag in (0, HAC_LAG, 12):
+        with pytest.raises(ValueError, match="constant over the estimable months"):
+            fama_macbeth(constant, complete, lag=lag)
+    # with calendar gaps, and with arbitrary values at the non-estimable months
+    rng = np.random.default_rng(41)
+    gaps = rng.random(n) > 0.2
+    gaps[200:230] = False
+    with_noise = np.where(gaps, 0.004, rng.standard_normal(n))
+    with pytest.raises(ValueError, match="constant over the estimable months"):
+        fama_macbeth(with_noise, gaps)
+    with pytest.raises(ValueError, match="constant over the estimable months"):
+        fama_macbeth(np.where(gaps, -1e-7, np.nan), gaps)
+    # genuinely varying series stay valid: tiny magnitudes, and a single month differing by one ulp-scale step
+    tiny = 1e-9 * rng.standard_normal(n)
+    r = fama_macbeth(tiny, gaps)
+    assert np.isfinite(r.se) and r.se > 0.0 and r.se == pytest.approx(
+        math.sqrt(hac_variance(np.where(gaps, tiny - tiny[gaps].mean(), 0.0), HAC_LAG, int(gaps.sum()))
+                  / gaps.sum()))
+    almost = np.full(n, 0.004)
+    almost[17] = 0.004 + 1e-12
+    r = fama_macbeth(almost, complete, lag=0)
+    assert r.n_months == n and r.se > 0.0 and abs(r.mean - 0.004) < 1e-14

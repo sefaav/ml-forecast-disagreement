@@ -85,6 +85,8 @@ def fama_macbeth(series: np.ndarray, estimable: np.ndarray, lag: int = HAC_LAG) 
     """
     values, estimable = _validated(series, estimable, lag)
     n_months = int(estimable.sum())
+    if np.ptp(values[estimable]) == 0.0:  # exactly constant: rounding of the mean could leave a spurious variance
+        raise ValueError("the HAC variance is zero: the coefficient series is constant over the estimable months")
     mean = float(values[estimable].sum()) / n_months
     x = np.where(estimable, values - mean, 0.0)
     omega = hac_variance(x, lag, n_months)
