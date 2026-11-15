@@ -37,6 +37,7 @@ python -m venv .venv
 .venv\Scripts\python -m disagreement.controls.h2 [--year Y]                        # H2 controls as monthly centred ranks
 .venv\Scripts\python -m disagreement.diagnostics.mechanical_bias                   # descriptive, all OOS years
 .venv\Scripts\python -m disagreement.diagnostics.design_evidence                   # H1 design evidence, all OOS years
+.venv\Scripts\python -m disagreement.diagnostics.forecast_performance              # dry run only (see Forecasting diagnostics)
 .venv\Scripts\python -m disagreement.inference.run                                 # dry run only (see Inference)
 .venv\Scripts\python -m pytest                           # synthetic tests
 ```
@@ -94,6 +95,7 @@ data/
   diagnostics/                    summary.json, universe_by_month.csv
     mechanical_bias/              monthly and signal-bin correlations, summary.json
     design_evidence/              H1 design diagnostics and synthetic reruns, summary.json
+    forecast_performance/         monthly rank IC of the five signals, summary.json
     inference/                    H1-H3 inference results, manifest.json, summary.json
 ```
 
@@ -103,6 +105,39 @@ data/
 `validation: PASS`. If a check fails, it exits with status 2, names the check
 and leaves no `summary.json` or `universe_by_month.csv`. An OSAP file other
 than the release pinned in `configs/baseline.yaml` (SHA-256) is rejected.
+
+## Forecasting diagnostics
+
+Descriptive out-of-sample evaluation of the saved forecasts, separate from the
+H1–H3 inference; it tests no hypothesis. It reads the saved outcomes and is
+guarded like the inference:
+
+```
+.venv\Scripts\python -m disagreement.diagnostics.forecast_performance            # dry run
+.venv\Scripts\python -m disagreement.diagnostics.forecast_performance --execute  # evaluate and publish
+```
+
+The five signals are the four family ranks and the ensemble signal of the
+saved ensemble files. The metric is the frozen model-selection score. In
+every OOS formation month, the stocks with a finite saved `target_rank` are
+kept and each signal is average-ranked among them, ties sharing their rank.
+The ranks are correlated with `target_rank` (Pearson), and a constant signal
+scores 0. The saved signals are ranked again for the correlation only and
+never modified. Every month weighs the same. The ensemble and target files of
+each OOS year are validated and must cover exactly the same stock-months.
+
+Results go to `data/diagnostics/forecast_performance/`, which is never
+replaced; remove it to rerun:
+
+- `monthly_ic.csv`: one row per month and signal, with the rank IC, whether
+  the scored signal was constant, and the numbers of $`U_t`$ members and of
+  scored stocks;
+- `summary.json`, written last: per signal the mean, median and sample SD of
+  the monthly IC, the shares of positive, zero and negative months and the
+  constant months; the outcome coverage; the SHA-256 of the configuration and
+  of every input file.
+
+Like everything here, these files stay local and are never committed.
 
 ## Inference
 

@@ -26,9 +26,12 @@ signal is extreme. Hypotheses, expected directions and verdict categories:
 
 ## Status
 
-> No outcome-based inference has been executed. No hypothesis has been tested
-> on real data and no empirical result has been examined. The repository
-> contains no licensed data, models or empirical results.
+> The descriptive out-of-sample forecasting diagnostics (monthly rank IC of
+> the four family ranks and the ensemble) have been executed on the real
+> outcomes. No hypothesis has been tested: the confirmatory H1–H3 inference
+> has not been executed, and the other pre-specified robustness analyses and
+> H4 are pending. The repository contains no licensed data, models or
+> empirical results.
 
 **Implemented and tested on synthetic data**
 
@@ -52,6 +55,9 @@ signal is extreme. Hypotheses, expected directions and verdict categories:
   (lag 6 decisional, lags 0 and 12 as sensitivity), the frozen decision rules,
   and a guarded command that records the SHA-256 of every input and publishes
   the results atomically ([data/README.md](data/README.md)).
+- *Forecasting diagnostics:* the monthly rank IC of the frozen model-selection
+  metric for the four family ranks and the ensemble, with equal month weights
+  (descriptive; executed).
 
 The forecast-only design evidence behind the H1 specification was regenerated
 from the saved signals by a committed diagnostic, without reading any outcome
@@ -83,9 +89,12 @@ The research protocol was frozen on 2026-11-09 and amended once on
 
 The test suite (`python -m pytest`) checks that the code implements the
 pre-specified computations, using synthetic inputs only. Passing tests are
-evidence about the software, not about any hypothesis. Empirical findings will
-exist only after the frozen inference is run on the real outcomes, and they
-will be reported under the pre-specified rules whatever their direction.
+evidence about the software, not about any hypothesis. The only empirical
+results so far are the descriptive out-of-sample forecasting diagnostics.
+Formal H1–H3 hypothesis-test results will exist only after the frozen
+inference is run on the real outcomes, and they will be reported under the
+pre-specified rules whatever their direction. H4 and the remaining robustness
+analyses are pending.
 
 ## Repository
 

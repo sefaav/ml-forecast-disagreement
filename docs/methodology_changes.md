@@ -387,3 +387,22 @@ decision rule changes.
   0.675613 after). The recorded figures and all tolerances are unchanged. The
   checkpoint then passed: 31 of 31 checks computed, five discrepancies
   resolved, none unresolved. No outcome-based H1–H4 result was examined.
+
+## 2026-11-15 — Post-outcome observation: return coverage and the H4 wording
+
+Descriptive observation made after the out-of-sample forecasting diagnostics
+examined the real outcomes; it is not an amendment and no decision follows.
+
+- The plan ("H4", "Returns and missing outcomes") justifies not using a
+  complete-case calendar-month rule by stating that, with 170 to 320 holdings
+  per leg, it "would discard most months". This was written before the
+  outcome coverage was examined.
+- The diagnostics found 988,051 of the 988,053 formation stock-months of the
+  480 OOS months with a finite next-month return; the two missing returns are
+  both in January 2007. A rule requiring every selected holding to have a
+  return could therefore exclude at most one of the 480 months, so the stated
+  motivation is empirically inaccurate for this sample.
+- The H4 procedure is unchanged: leg returns are averaged over the observed
+  holdings, coverage is disclosed and missing returns are not imputed. The
+  plan's dated wording is kept as written. No H4 result has been computed and
+  no methodological change was made in response to any performance result.
