@@ -27,6 +27,7 @@ numpy==2.5.4
 packaging==26.3
 pandas==2.2.3
 parso==0.8.7
+patsy==1.0.2
 pluggy==1.6.0
 prompt_toolkit==3.0.53
 psycopg2-binary==2.9.13
@@ -43,6 +44,7 @@ setuptools==84.2.1
 six==1.17.0
 SQLAlchemy==2.0.54
 stack-data==0.6.3
+statsmodels==0.14.6
 sympy==1.14.0
 threadpoolctl==3.7.0
 torch==2.14.1

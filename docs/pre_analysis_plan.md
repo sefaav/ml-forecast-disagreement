@@ -1089,7 +1089,12 @@ a constant; a series with gaps must match the explicit sum over observed pairs.
 - *Two statements.* "Negative $`S^c \times CD^B`$ interaction" is the
   statistical verdict. "A positively informative signal becomes less
   reliable where disagreement is higher" is claimed only if, in addition,
-  $`\bar g(0.1) > 0`$ with $`p < 0.05`$ in the primary evaluation ($`x_k = 0`$).
+  $`\bar g(0.1) > 0`$ with $`p < 0.05`$ for specification C on the H1 sample
+  ($`x_k = 0`$, no control term): the economic qualification of H1
+  (hypotheses.md, H1 verdict). The H2 slopes, at $`x_k = 0`$ and at the
+  complete-case means, are reported with their intervals as above but give no
+  separate economic verdict and do not affect the H1 → H2 gate (wording
+  clarified on 2026-11-15; no rule changed).
   If $`\bar g(0.9)`$ is significantly negative, the result is described as a
   sign reversal. $`\bar g`$ is a local within-bin slope estimated with far
   less precision than across-bin contrasts, so a condition not met is

@@ -133,7 +133,10 @@ reads the saved outcomes. It is guarded:
   - the data root, `diagnostics/`, the repository or the configuration file,
     or an ancestor of any of them;
   - a pipeline data directory, its ancestors or anything inside it;
-  - a directory inside another result set.
+  - a directory inside another result set;
+  - a directory inside the repository but not below its Git-ignored output
+    areas `data/` and `experiments/results/`, even if it does not exist yet.
+    Destinations outside the repository remain possible.
 - **Output:** the command prints administrative lines only, with no
   coefficient, return or verdict. On any failure it exits with status 2 and
   publishes nothing.
@@ -179,7 +182,10 @@ the result was produced with to check the inputs as well:
 ```
 
 `verify_published` checks the exact file inventory, the marker, the manifest,
-the SHA-256 of every result file and the consecutive monthly calendar. With
+the SHA-256 of every result file and the consecutive monthly calendar. It
+also checks the marker's scientific scope (completion meaning, primary
+outcome and lag, implemented and outstanding analyses, roles) against the
+code's constants and the H1 → H2 gate in the hashed `report.json`. With
 the data directory and configuration it also checks every recorded input. It
 raises an error on the first difference. No pipeline command removes
 `diagnostics/inference/`. After an upstream stage is rerun, an earlier result

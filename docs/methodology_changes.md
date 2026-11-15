@@ -343,3 +343,47 @@ result examined. Primary specifications and decision rules unchanged.
   close-to-close cost-sensitivity analysis, not an executable strategy,
   kept apart from the H4 comparison and from every verdict. Neither
   analysis is implemented yet.
+
+## 2026-11-15 — Exact rank ties in the derived signals
+
+Implementation correction found by a pre-results audit, before
+any outcome-based H1–H4 result was examined. No definition, estimand or
+decision rule changes.
+
+- **Defect.** The ensemble signal $`S`$ (mean of the four family ranks), the
+  between-family disagreement (population SD, ddof = 0, of the four ranks),
+  the replica-rank SD of each family (ddof = 1) and the mean of the four
+  family uncertainty ranks were computed in floating point. Mathematically
+  equal values could then differ in the last bit, for example the same four
+  family ranks in another family order, and the average-rank convention split
+  ties that the plan requires to share their average rank and signal bin.
+- **Correction.** In a cross-section of $`n > 1`$ stocks, every unit rank is
+  $`(R - 1)/(n - 1)`$ with $`R`$ a half-integer average rank, that is
+  $`k / (2(n - 1))`$ with $`k`$ an integer; a single stock ($`n = 1`$) has the
+  unit rank 0.5, that is $`1/2`$.
+  The four quantities are computed from these exact integer numerators and
+  rounded once, so equal rank multisets and permutations produce
+  bit-identical means and dispersions; common translations preserve
+  dispersions, and identical replica ranks yield exactly zero standard
+  deviation.
+  This restores the frozen tie convention; the formulas, the ddof choices and
+  all H1–H4 rules are unchanged.
+- **Regeneration and validation.** On 2026-11-15 the ensemble signals,
+  between-family disagreement, within-family uncertainty, conditional
+  disagreement, H2 controls and the mechanical-bias and design-evidence
+  diagnostics were regenerated for all 40 OOS years (1985-01 to 2024-12, 480
+  months) from the existing family signals; the forecasts and family signals
+  were reused, and their SHA-256 were unchanged. The first rerun of the
+  checkpoint blocked on one reconstructed value. Recomputing the former and the
+  corrected constructions from the saved signals reproduced both the former
+  reconstructed values and the regenerated ones, and traced the change to
+  restored ties: in July 2022 a tied signal at the boundary of bins 1 and 2
+  moves one stock into bin 1, and in January 2022 two equal between-family
+  disagreements tie again in $`CD^B`$. Two reconstructed values were therefore
+  replaced, the former ones (verified on 2026-11-09) being kept in the
+  module's notes: `cd4_vs_signal_2022_bin1` 0.6821 → 0.6810 (computed
+  0.682056 before, 0.681017 after the correction) and
+  `cd4_vs_signal_neighbours_pooled_bin1` 0.6761 → 0.6756 (0.676109 before,
+  0.675613 after). The recorded figures and all tolerances are unchanged. The
+  checkpoint then passed: 31 of 31 checks computed, five discrepancies
+  resolved, none unresolved. No outcome-based H1–H4 result was examined.

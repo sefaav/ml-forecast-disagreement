@@ -254,7 +254,7 @@ class Report:
     wald: WaldInference  # the joint test of the two H3 interactions on the H3 mask
     slopes: dict[str, Inference]  # C.g(c), H2.g(c) and, if supplied, H2.g|controls_at_means(c)
     non_estimable: dict[str, dict[int, tuple[str, ...]]]  # specification -> month -> reasons
-    sample_sizes: dict[str, np.ndarray]  # specification -> n_obs per grid month (0 where not estimable)
+    sample_sizes: dict[str, np.ndarray]  # specification -> n_obs per grid month, kept where not estimable
     failures: dict[str, dict[int, str]]  # statistic -> lag -> reason, for every statistic that failed
 
 

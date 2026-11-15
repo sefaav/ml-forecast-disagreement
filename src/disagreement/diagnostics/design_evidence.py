@@ -109,15 +109,24 @@ SHARE_TOLERANCE = 0.0005  # 0.05 percentage point
 MIN_IDENTIFYING_SHARE = 1e-10  # of the interaction's squared norm left after partialling; below, no weights
 # Discrepancies resolved and recorded in docs/methodology_changes.md (2026-11-09): recorded figures that were
 # coarse summaries of several cells or years. The recorded value and its tolerance are kept unchanged; the
-# resolution applies only if the reproduced value matches the reconstructed value verified on 2026-11-09
-# within RESOLVED_TOLERANCE. A materially changed value is an unresolved failure.
+# resolution applies only if the reproduced value matches the reconstructed value, verified on the date given in
+# its note, within RESOLVED_TOLERANCE. A materially changed value is an unresolved failure. Two reconstructed
+# values were replaced on 2026-11-15, once the exact-rank correction restored ties the former floats had split.
 RESOLVED_TOLERANCE = 0.0005
+_TIE_UPDATE = "replaced on 2026-11-15 after the exact-rank correction restored tied signals"
 RESOLVED = {
-    "partialled_corr_A_bin20": (-0.6588, "recorded 'about -0.65' is one rounded value for A/D x bins 1/20"),
-    "cd4_vs_signal_2020_bin20": (-0.6944, "recorded 'about +0.67 and -0.67 in 2020 and 2022' is a two-year summary"),
-    "cd4_vs_signal_2022_bin1": (0.6821, "recorded 'about +0.67 and -0.67 in 2020 and 2022' is a two-year summary"),
-    "cd4_vs_signal_2022_bin20": (-0.6444, "recorded 'about +0.67 and -0.67 in 2020 and 2022' is a two-year summary"),
-    "cd4_vs_signal_neighbours_pooled_bin1": (0.6761, "recorded 'about +0.67' is a rounded two-year summary"),
+    "partialled_corr_A_bin20": (
+        -0.6588, "recorded 'about -0.65' is one rounded value for A/D x bins 1/20; verified on 2026-11-09"),
+    "cd4_vs_signal_2020_bin20": (
+        -0.6944, "recorded 'about +0.67 and -0.67 in 2020 and 2022' is a two-year summary; verified on 2026-11-09"),
+    "cd4_vs_signal_2022_bin1": (
+        0.6810, "recorded 'about +0.67 and -0.67 in 2020 and 2022' is a two-year summary; former reconstructed "
+                f"value 0.6821 verified on 2026-11-09, {_TIE_UPDATE}"),
+    "cd4_vs_signal_2022_bin20": (
+        -0.6444, "recorded 'about +0.67 and -0.67 in 2020 and 2022' is a two-year summary; verified on 2026-11-09"),
+    "cd4_vs_signal_neighbours_pooled_bin1": (
+        0.6756, "recorded 'about +0.67' is a rounded two-year summary; former reconstructed value 0.6761 verified "
+                f"on 2026-11-09, {_TIE_UPDATE}"),
 }
 # The deterministic checks the checkpoint requires. A missing or not-computed entry blocks it (fail closed).
 EXPECTED_DETERMINISTIC_CHECKS = (
@@ -703,8 +712,8 @@ def classify_failures(comparison: dict, undefined_months: list | None = None) ->
             reconstructed, note = RESOLVED[key]
             if abs(value - reconstructed) <= RESOLVED_TOLERANCE:
                 entry["resolution"] = (
-                    f"{note}; reconstructed value {reconstructed} verified on 2026-11-09 "
-                    f"(methodology_changes.md), tolerance {RESOLVED_TOLERANCE}"
+                    f"{note}; reconstructed value {reconstructed} (methodology_changes.md), "
+                    f"tolerance {RESOLVED_TOLERANCE}"
                 )
                 resolved[key] = entry["resolution"]
                 continue

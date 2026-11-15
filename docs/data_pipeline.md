@@ -84,6 +84,19 @@ Positive and negative infinity is stored as missing. No other transformation
 - No future return, survival, delisting or availability enters $`U_t`$.
 - A security in $`U_t`$ that delists during $`t+1`$ stays in $`U_t`$.
 
+*Limitation: historical availability of the OSAP characteristics.* The
+`yyyymm` of a characteristic is the month to which OSAP's construction, with
+its own reporting lags, assigns the value; it does not establish that the
+value in the October 2025 release is exactly what an investor could observe
+at the end of that month. The release is a retrospective research dataset:
+its inputs may have been revised or backfilled, and its characteristics were
+selected from anomalies documented by later research, some published long
+after the early formation months. The pipeline uses the pinned release as
+specified and does not test point-in-time availability. No look-ahead has
+been demonstrated, but historical forecast performance, especially in the
+early OOS years, and the H1–H3 results may be affected; they are conditional
+on this research dataset.
+
 ## Reproducibility
 
 From the repository root, with the environment pinned in
