@@ -72,6 +72,16 @@ def outcome_coverage(
     grouped = frame.groupby(["yyyymm", "signal_bin", "cd_group"], sort=True)["finite"]
     monthly = grouped.agg(n_stocks="size", n_finite="sum").reset_index()
     monthly["finite_share"] = monthly["n_finite"] / monthly["n_stocks"]
+    monthly = monthly.loc[:, list(MONTHLY_COLUMNS)]
+    return monthly, coverage_profile(monthly)
+
+
+def coverage_profile(monthly: pd.DataFrame) -> pd.DataFrame:
+    """The equal-month-weight profile by (signal bin, CD^B group) of monthly coverage rows (MONTHLY_COLUMNS).
+
+    The monthly rows of separate years can be concatenated first: groups are formed inside each month, so the
+    profile of the concatenation equals the profile of a single call on the combined stock-months.
+    """
     profile = (
         monthly.groupby(["signal_bin", "cd_group"], sort=True)
         .agg(
@@ -82,4 +92,4 @@ def outcome_coverage(
         )
         .reset_index()
     )
-    return monthly.loc[:, list(MONTHLY_COLUMNS)], profile.loc[:, list(PROFILE_COLUMNS)]
+    return profile.loc[:, list(PROFILE_COLUMNS)]
