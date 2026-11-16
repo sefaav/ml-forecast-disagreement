@@ -28,10 +28,11 @@ signal is extreme. Hypotheses, expected directions and verdict categories:
 
 > The descriptive out-of-sample forecasting diagnostics (monthly rank IC of
 > the four family ranks and the ensemble) have been executed on the real
-> outcomes. No hypothesis has been tested: the confirmatory H1–H3 inference
-> has not been executed, and the other pre-specified robustness analyses and
-> H4 are pending. The repository contains no licensed data, models or
-> empirical results.
+> outcomes. The frozen core inference, which estimates H1, H2 and H3 jointly,
+> has been executed once and its results are published locally; the H1
+> result has been interpreted, and the detailed interpretation of H2 and H3
+> is pending. The other pre-specified robustness analyses and H4 are pending.
+> The repository contains no licensed data, models or empirical results.
 
 **Implemented and tested on synthetic data**
 
@@ -89,12 +90,11 @@ The research protocol was frozen on 2026-11-09 and amended once on
 
 The test suite (`python -m pytest`) checks that the code implements the
 pre-specified computations, using synthetic inputs only. Passing tests are
-evidence about the software, not about any hypothesis. The only empirical
-results so far are the descriptive out-of-sample forecasting diagnostics.
-Formal H1–H3 hypothesis-test results will exist only after the frozen
-inference is run on the real outcomes, and they will be reported under the
-pre-specified rules whatever their direction. H4 and the remaining robustness
-analyses are pending.
+evidence about the software, not about any hypothesis. The empirical results
+so far are the descriptive out-of-sample forecasting diagnostics and the
+frozen H1–H3 core inference, run once on the real outcomes and reported under
+the pre-specified rules whatever their direction. H4 and the remaining
+robustness analyses are pending.
 
 ## Repository
 
