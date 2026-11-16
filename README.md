@@ -29,9 +29,10 @@ signal is extreme. Hypotheses, expected directions and verdict categories:
 > The descriptive out-of-sample forecasting diagnostics (monthly rank IC of
 > the four family ranks and the ensemble) have been executed on the real
 > outcomes. The frozen core inference, which estimates H1, H2 and H3 jointly,
-> has been executed once and its results are published locally; the H1
-> result has been interpreted, and the detailed interpretation of H2 and H3
-> is pending. The other pre-specified robustness analyses and H4 are pending.
+> has been executed once and its results are published locally. H1 and H2
+> have been interpreted; H2 is reported descriptively because the
+> fixed-sequence gate from H1 to H2 is closed. The detailed interpretation of
+> H3, the other pre-specified robustness analyses and H4 are pending.
 > The repository contains no licensed data, models or empirical results.
 
 **Implemented and tested on synthetic data**
