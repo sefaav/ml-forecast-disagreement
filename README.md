@@ -31,8 +31,8 @@ signal is extreme. Hypotheses, expected directions and verdict categories:
 > outcomes. The frozen core inference, which estimates H1, H2 and H3 jointly,
 > has been executed once and its results are published locally. H1, H2 and
 > H3 have been interpreted; H2 is reported descriptively because the
-> fixed-sequence gate from H1 to H2 is closed. The other pre-specified
-> robustness analyses and H4 are pending.
+> fixed-sequence gate from H1 to H2 is closed. The pre-specified H1
+> robustness analyses have been executed once and interpreted; H4 is pending.
 > The repository contains no licensed data, models or empirical results.
 
 **Implemented and tested on synthetic data**
@@ -60,16 +60,14 @@ signal is extreme. Hypotheses, expected directions and verdict categories:
 - *Forecasting diagnostics:* the monthly rank IC of the frozen model-selection
   metric for the four family ranks and the ensemble, with equal month weights
   (descriptive; executed).
+- *H1 robustness analyses:* excluding the twelve 2021 formation months; raw,
+  range and MAD disagreement measures; ten signal bins; leave-one-family-out
+  ensembles; the two subperiods 1985–2004 and 2005–2024 (descriptive;
+  executed once).
 
 The forecast-only design evidence behind the H1 specification was regenerated
 from the saved signals by a committed diagnostic, without reading any outcome
 (pre-analysis plan, "Reproducibility of the evidence").
-
-**Implemented and tested on synthetic data, not yet executed**
-
-- H1 robustness analyses: excluding the twelve 2021 formation months; raw,
-  range and MAD disagreement measures; ten signal bins; leave-one-family-out
-  ensembles; the two subperiods 1985–2004 and 2005–2024.
 
 **Pre-specified but not yet implemented**
 
@@ -95,10 +93,10 @@ The research protocol was frozen on 2026-11-09 and amended once on
 The test suite (`python -m pytest`) checks that the code implements the
 pre-specified computations, using synthetic inputs only. Passing tests are
 evidence about the software, not about any hypothesis. The empirical results
-so far are the descriptive out-of-sample forecasting diagnostics and the
-frozen H1–H3 core inference, run once on the real outcomes and reported under
-the pre-specified rules whatever their direction. H4 and the remaining
-robustness analyses are pending.
+so far are the descriptive out-of-sample forecasting diagnostics, the frozen
+H1–H3 core inference and the pre-specified H1 robustness analyses, each run
+once on the real outcomes and reported under the pre-specified rules whatever
+their direction. H4 is pending.
 
 ## Repository
 
