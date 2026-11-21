@@ -65,15 +65,18 @@ The forecast-only design evidence behind the H1 specification was regenerated
 from the saved signals by a committed diagnostic, without reading any outcome
 (pre-analysis plan, "Reproducibility of the evidence").
 
-**Pre-specified but not yet implemented**
+**Implemented and tested on synthetic data, not yet executed**
 
 - H1 robustness analyses: excluding the twelve 2021 formation months; raw,
   range and MAD disagreement measures; ten signal bins; leave-one-family-out
   ensembles; the two subperiods 1985–2004 and 2005–2024.
+
+**Pre-specified but not yet implemented**
+
 - H4 and its separate secondary backtesting extension.
 
-The implemented robustness checks are specification B, the raw `ret_next`
-outcome and the HAC lags 0 and 12.
+The robustness checks executed with the core inference are specification B,
+the raw `ret_next` outcome and the HAC lags 0 and 12.
 
 ## Protocol
 

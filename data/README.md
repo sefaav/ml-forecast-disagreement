@@ -39,6 +39,7 @@ python -m venv .venv
 .venv\Scripts\python -m disagreement.diagnostics.design_evidence                   # H1 design evidence, all OOS years
 .venv\Scripts\python -m disagreement.diagnostics.forecast_performance              # dry run only (see Forecasting diagnostics)
 .venv\Scripts\python -m disagreement.inference.run                                 # dry run only (see Inference)
+.venv\Scripts\python -m disagreement.inference.robustness                          # dry run only (see H1 robustness)
 .venv\Scripts\python -m pytest                           # synthetic tests
 ```
 
@@ -97,6 +98,7 @@ data/
     design_evidence/              H1 design diagnostics and synthetic reruns, summary.json
     forecast_performance/         monthly rank IC of the five signals, summary.json
     inference/                    H1-H3 inference results, manifest.json, summary.json
+    h1_robustness/                remaining H1 robustness analyses, manifest.json, summary.json
 ```
 
 ## Successful run
@@ -205,8 +207,9 @@ committed or pasted into an external service.
   `scientific_protocol_complete: false`. The robustness analyses of the
   pre-analysis plan other than specification B, the raw outcome and the HAC
   lags (excluding 2021, raw, range and MAD disagreement, ten bins,
-  leave-one-family-out, subperiods), as well as H4 and its backtesting
-  extension, are not implemented.
+  leave-one-family-out, subperiods) are not part of this result set; they
+  have their own command (see H1 robustness). H4 and its backtesting
+  extension are not implemented.
 
 **Verifying a result set.** Verification uses the Python API; the command
 has no verification option. Pass the data directory and the configuration
@@ -236,3 +239,41 @@ Between the two renames the destination is briefly absent. A crash of the
 process at that moment, or before the staging directory is cleaned up, is
 not recovered automatically: restore the `.previous-` directory by hand and
 delete a leftover `.staging-` directory.
+
+## H1 robustness
+
+The pre-specified H1 robustness analyses that the core inference does not
+include ("Robustness and subperiods"). Each repeats the primary H1 test
+(specification C, `target_rank`, lag 6) with one change; all are descriptive
+and none alters the H1 verdict.
+
+```
+.venv\Scripts\python -m disagreement.inference.robustness            # dry run
+.venv\Scripts\python -m disagreement.inference.robustness --execute  # load, estimate, publish
+```
+
+- **Without `--execute`** only the configuration is read.
+- **With `--execute`** the command first verifies `diagnostics/inference/`
+  with its inputs. It then takes:
+  - the primary monthly interaction series from that result set, for the
+    analysis excluding 2021 and for the two subperiods;
+  - each OOS year's conditional disagreement, ensemble signals and target,
+    for the analyses that are re-estimated: raw, range and MAD disagreement,
+    ten bins, and the four leave-one-family-out ensembles.
+- **Checks before estimation:**
+  - the saved raw disagreement must equal the SD of the saved family ranks;
+  - the saved CD^B must equal that SD ranked within the saved cells;
+  - re-estimating C must reproduce the published series.
+- **Nothing upstream is rerun or modified.**
+- **Destination:** `--output-dir`, default `data/diagnostics/h1_robustness/`.
+  It is checked like the inference destination and is never replaced.
+
+| File | Content |
+|---|---|
+| `inference.csv` | one row per analysis (and the published primary for comparison) at lag 6: mean, HAC standard error, t, p, 95% interval, months, or the failure reason |
+| `monthly.csv` | one row per re-estimated analysis and month: bins, estimability, reasons, sample size, β₂, β₃ |
+| `manifest.json` | SHA-256 of the configuration, of every input file (the published inference files included) and of the two tables |
+| `summary.json` | completion marker, written last |
+
+Verify a result set with
+`disagreement.inference.robustness.verify_robustness(path, DataPaths(Path('data')), DEFAULT_CONFIG)`.
